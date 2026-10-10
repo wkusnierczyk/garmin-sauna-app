@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>Sauna Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=Ubuntu+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: an app shell. Sidebar on laptops, a top tab bar on tablets, a bottom tab bar on phones.
+   Lists with detail sit side by side from 860 px and stack into list-then-detail below that.
+   Shares the watch's vocabulary: zone colours, heat orange, cold blue, monospaced numbers. */
+:root {
+  --bg: #eef0ed;
+  --surface: #ffffff;
+  --surface-2: #e6e9e5;
+  --ink: #1b1f22;
+  --muted: #5b646b;
+  --faint: #8d969c;
+  --line: #d4d9d4;
+  --accent: #b8501c;
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e3d8;
+  --heat: #cf5e1d;
+  --cold: #1b7cbc;
+  --rest: #8a949b;
+  --ok: #2c7f49;
+  --warn: #a8670f;
+  --warn-soft: #f7ead2;
+  --bad: #bf342c;
+  --bad-soft: #f6dcd9;
+  --z0: #c3cacf;
+  --chart-grid: #e1e5e1;
+  --shadow: 0 1px 2px rgba(20, 26, 30, 0.06), 0 4px 14px rgba(20, 26, 30, 0.05);
+  --f-ui: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-head: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-num: "Ubuntu Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1012; --surface: #171a1d; --surface-2: #20252a; --ink: #e7eaec; --muted: #9aa3aa; --faint: #6f787f; --line: #2a3035;
+    --accent: #f08a4b; --accent-ink: #1a0c04; --accent-soft: #3a2418; --heat: #f08a4b; --cold: #5cc4ff; --rest: #a3abb2;
+    --ok: #5ed38a; --warn: #f0b24b; --warn-soft: #3a2d14; --bad: #ff6b5e; --bad-soft: #3d1c19; --z0: #4b545b; --chart-grid: #23292e;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1012; --surface: #171a1d; --surface-2: #20252a; --ink: #e7eaec; --muted: #9aa3aa; --faint: #6f787f; --line: #2a3035;
+  --accent: #f08a4b; --accent-ink: #1a0c04; --accent-soft: #3a2418; --heat: #f08a4b; --cold: #5cc4ff; --rest: #a3abb2;
+  --ok: #5ed38a; --warn: #f0b24b; --warn-soft: #3a2d14; --bad: #ff6b5e; --bad-soft: #3d1c19; --z0: #4b545b; --chart-grid: #23292e;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.45; }
+button, input, select { font: inherit; color: inherit; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- shell ---------- */
+.app { min-height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); }
+.chrome { background: var(--surface); border-bottom: 1px solid var(--line); z-index: 5; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-head); font-weight: 700; font-size: 20px; letter-spacing: 0.01em; }
+.brand svg { flex: none; }
+.brand small { font-family: var(--f-ui); font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: 0; display: block; line-height: 1.1; }
+.nav { display: flex; }
+.nav a { display: flex; align-items: center; gap: 10px; color: var(--muted); text-decoration: none; font-weight: 500; border-radius: 10px; }
+.nav a svg { flex: none; }
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current="page"] { color: var(--accent); }
+.nav a:focus-visible, .btn:focus-visible, .row:focus-visible, .chip:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nav .badge { margin-left: auto; font-family: var(--f-num); font-size: 12px; background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 0 6px; min-width: 18px; text-align: center; }
+.simnote { font-size: 12px; color: var(--muted); }
+.simnote b { color: var(--ink); font-weight: 600; }
+
+main { min-width: 0; padding-inline: 16px; padding-block: 18px 32px; }
+.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 18px; }
+.phead { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 16px; }
+.phead h1 { margin: 0; font-family: var(--f-head); font-weight: 700; font-size: 30px; line-height: 1.1; text-wrap: balance; }
+.phead p { margin: 2px 0 0; color: var(--muted); max-width: 64ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Laptop: sidebar */
+@media (min-width: 1100px) {
+  .app { grid-template-columns: 236px minmax(0, 1fr); }
+  .chrome { position: sticky; top: 0; height: 100vh; height: 100dvh; border-bottom: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; padding-inline: 16px; padding-block: 22px 18px; }
+  .nav { flex-direction: column; gap: 2px; }
+  .nav a { padding: 9px 10px; }
+  .nav a[aria-current="page"] { background: var(--accent-soft); }
+  .simnote { margin-top: auto; }
+  main { padding-inline: 28px; padding-block: 26px 40px; }
+}
+/* Tablet: top tab bar */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .chrome { position: sticky; top: env(safe-area-inset-top, 0px); display: flex; align-items: center; gap: 18px; padding-inline: 20px; padding-block: 10px; }
+  .nav { gap: 4px; flex-wrap: wrap; }
+  .nav a { padding: 7px 10px; }
+  .nav a[aria-current="page"] { background: var(--accent-soft); }
+  .nav .badge { margin-left: 0; }
+  .simnote { margin-left: auto; text-align: right; }
+  .simnote span { display: none; }
+  main { padding-inline: 20px; }
+}
+/* Phone: brand bar on top, tab bar at the bottom */
+@media (max-width: 719px) {
+  .chrome { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-inline: 16px; padding-block: 10px; }
+  .simnote span { display: none; }
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); justify-content: space-around; padding-inline: 4px; padding-block: 6px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 6; }
+  .nav a { flex-direction: column; gap: 2px; font-size: 11.5px; padding: 4px 6px; position: relative; }
+  .nav .badge { position: absolute; top: 0; right: 2px; font-size: 10px; padding: 0 4px; min-width: 14px; }
+  main { padding-block: 16px calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .phead h1 { font-size: 26px; }
+}
+
+/* ---------- components ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding-inline: 16px; padding-block: 14px 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.card > h2, .sec-h { margin: 0; font-family: var(--f-head); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card > h2 a, .card > h2 button { text-transform: none; letter-spacing: 0; font-family: var(--f-ui); font-weight: 500; font-size: 13.5px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.empty { color: var(--muted); font-size: 14px; padding-block: 8px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 9px; padding: 6px 12px; font-weight: 500; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.06); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--line); }
+.btn.sm { padding: 3px 8px; font-size: 13px; border-radius: 7px; }
+.btn.icon { padding: 4px 7px; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font-weight: 500; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 11px; font-size: 13.5px; font-weight: 500; cursor: pointer; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.chip .n { font-family: var(--f-num); font-size: 12.5px; margin-left: 4px; opacity: 0.8; }
+
+.src { display: inline-block; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 7px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.src-mine { border-color: var(--accent); color: var(--accent); }
+.src-community { border-color: var(--cold); color: var(--cold); }
+.src-suggested { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+.tag-bad { background: var(--bad-soft); color: var(--bad); }
+.tag-ok { color: var(--ok); }
+.tag-src { border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+
+.tl { display: flex; gap: 2px; height: 8px; border-radius: 3px; overflow: hidden; min-width: 0; }
+.tl.big { height: 14px; border-radius: 4px; }
+.tl i { display: block; min-width: 2px; }
+.k-heat { background: var(--heat); } .k-cold { background: var(--cold); } .k-rest { background: var(--rest); opacity: 0.45; }
+.zs { display: flex; height: 8px; border-radius: 3px; overflow: hidden; min-width: 0; background: var(--surface-2); }
+.zs.big { height: 12px; }
+.zs i { display: block; height: 100%; }
+.zs .notch { width: 2px; background: var(--surface); flex: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding-inline: 14px; padding-block: 10px 12px; min-width: 0; }
+.tile dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-family: var(--f-head); font-weight: 600; }
+.tile dd { margin: 2px 0 0; font-family: var(--f-num); font-size: 28px; font-weight: 700; line-height: 1.1; }
+.tile dd small { font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 4px; }
+.tile .sub { font-size: 12.5px; color: var(--muted); }
+
+/* grids */
+.grid2 { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } }
+
+/* split list/detail */
+.split { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.split .detail { display: none; }
+.split.open .list { display: none; }
+.split.open .detail { display: grid; }
+.backbtn { justify-self: start; }
+@media (min-width: 860px) {
+  .split { grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.5fr); }
+  .split .detail, .split.open .list { display: grid; }
+  .split.open .detail { display: grid; }
+  .backbtn { display: none; }
+}
+.detail { gap: 16px; min-width: 0; align-content: start; }
+.list { gap: 10px; min-width: 0; align-content: start; display: grid; }
+
+/* rows */
+.rows { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.row { display: grid; gap: 4px 12px; padding-inline: 14px; padding-block: 11px; border-top: 1px solid var(--line); cursor: pointer; min-width: 0; text-align: left; }
+.row:first-child { border-top: 0; }
+.row:hover { background: var(--surface-2); }
+.row[aria-selected="true"] { background: var(--accent-soft); }
+.row .title { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .meta { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; min-width: 0; }
+.srow { grid-template-columns: minmax(0, 1fr) auto; }
+.srow .right { text-align: right; display: grid; gap: 2px; justify-items: end; }
+.srow .zs { grid-column: 1 / -1; }
+.prow { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+.prow .tl { grid-column: 2 / 3; }
+.wcheck { display: grid; place-items: center; width: 28px; height: 28px; margin: -4px; cursor: pointer; }
+.wcheck input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.wcheck input:disabled { cursor: not-allowed; }
+
+/* watch card */
+.watch-head { display: flex; align-items: center; gap: 12px; }
+.dial { width: 44px; height: 44px; border-radius: 50%; background: #111; box-shadow: 0 0 0 3px #3a3f44, 0 0 0 5px #1d2023; display: grid; place-items: center; flex: none; }
+.dial b { font-family: var(--f-num); color: #f3f5f7; font-size: 12px; }
+.watch-head .wh { display: grid; gap: 1px; min-width: 0; }
+.watch-head .wh strong { font-weight: 600; }
+.status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; flex: none; }
+.dot.pending { background: var(--warn); }
+.olist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.olist li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding-block: 7px; border-top: 1px solid var(--line); }
+.olist li:first-child { border-top: 0; }
+.olist .pos { font-family: var(--f-num); color: var(--muted); text-align: right; }
+.olist .nm { min-width: 0; display: grid; gap: 3px; }
+.olist .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.olist .ctl { display: flex; gap: 2px; }
+.cap { font-family: var(--f-num); font-size: 13px; color: var(--muted); }
+.cap.full { color: var(--warn); }
+
+/* program detail */
+.dh { display: grid; gap: 6px; }
+.dh h2 { margin: 0; font-family: var(--f-head); font-size: 28px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.dh .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; color: var(--muted); font-size: 14px; }
+.notice { border-radius: 10px; padding-inline: 12px; padding-block: 9px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.notice.info { background: var(--surface-2); }
+.notice.warn { background: var(--warn-soft); color: var(--ink); }
+.notice.bad { background: var(--bad-soft); color: var(--ink); }
+.notice.ai { border: 1px dashed var(--accent); }
+.steps { width: 100%; border-collapse: collapse; font-size: 14px; }
+.steps th { text-align: left; font-family: var(--f-head); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0 8px 6px 0; border-bottom: 1px solid var(--line); }
+.steps td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.steps tr:last-child td { border-bottom: 0; }
+.steps .r { text-align: right; }
+.steps tr.round-start td { border-top: 1px solid var(--line); }
+.kdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; vertical-align: 1px; }
+.tablewrap { overflow-x: auto; min-width: 0; }
+.vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.vlist li { display: flex; gap: 8px; align-items: baseline; }
+.sharebox { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.code { font-family: var(--f-num); font-size: 18px; font-weight: 700; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 8px; background: var(--surface-2); user-select: all; }
+
+/* builder */
+.bld-meta { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span, .field > label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.inp { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 9px; min-width: 0; width: 100%; }
+.inp.num { font-family: var(--f-num); }
+.inp.bad { border-color: var(--bad); }
+.bsteps { display: grid; gap: 8px; }
+.bstep { display: grid; grid-template-columns: 26px 110px minmax(90px, 1fr) 74px 74px minmax(96px, 0.8fr) auto; gap: 6px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; border-left: 4px solid var(--rest); background: var(--surface); }
+.bstep.heat { border-left-color: var(--heat); }
+.bstep.cold { border-left-color: var(--cold); }
+.bstep.flag-warn { box-shadow: inset 0 0 0 1px var(--warn); }
+.bstep.flag-block { box-shadow: inset 0 0 0 1px var(--bad); }
+.bstep .rd { font-family: var(--f-num); font-size: 12px; color: var(--muted); text-align: center; }
+.bstep .ctl { display: flex; gap: 2px; justify-content: flex-end; }
+.bstep .unit { position: relative; }
+.bstep .unit::after { content: attr(data-u); position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); pointer-events: none; }
+.bstep .unit .inp { padding-right: 26px; }
+.bstep .na { font-size: 12px; color: var(--faint); text-align: center; }
+.bhead { display: grid; grid-template-columns: 26px 110px minmax(90px, 1fr) 74px 74px minmax(96px, 0.8fr) auto; gap: 6px; padding-inline: 12px; font-size: 11.5px; font-family: var(--f-head); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+@media (max-width: 640px) {
+  .bhead { display: none; }
+  .bstep { grid-template-columns: 26px 1fr 1fr; }
+  .bstep .label { grid-column: 2 / 4; }
+  .bstep .ctl { grid-column: 1 / 4; justify-content: flex-start; }
+  .bstep > :nth-child(1) { grid-row: span 3; align-self: start; padding-top: 7px; }
+}
+.adds { display: flex; flex-wrap: wrap; gap: 6px; }
+.sticky-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+
+/* sessions */
+.chartbox { min-width: 0; position: relative; }
+.chartbox svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.chartbox text { font-family: var(--f-ui); }
+.statline { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px 14px; }
+.statline div { min-width: 0; }
+.statline dt { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--f-head); font-weight: 600; }
+.statline dd { margin: 0; font-family: var(--f-num); font-size: 20px; font-weight: 700; }
+.amb { display: inline-flex; gap: 6px; align-items: center; }
+.amb .inp { width: 70px; padding: 2px 6px; }
+
+/* insights */
+.insight { display: grid; gap: 8px; }
+.insight p { margin: 0; max-width: 70ch; }
+.ev { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.ev .lvl { font-weight: 600; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink); }
+.ev .lvl.data { border-color: var(--accent); color: var(--accent); }
+.cites { margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--muted); display: grid; gap: 4px; }
+.cites i { font-style: italic; }
+.sugs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+
+/* settings */
+.sgrid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); align-items: start; }
+.seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); }
+.seg label { flex: 1 1 auto; text-align: center; padding: 6px 10px; font-size: 14px; cursor: pointer; border-left: 1px solid var(--line); white-space: nowrap; }
+.seg label:first-of-type { border-left: 0; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + label { background: var(--ink); color: var(--surface); font-weight: 600; }
+.seg input:disabled + label { opacity: 0.45; cursor: not-allowed; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -3px; }
+.toggle { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.toggle input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.ztable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ztable td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); }
+.ztable tr:last-child td { border-bottom: 0; }
+.ztable td.r { text-align: right; font-family: var(--f-num); }
+.ztable i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; }
+.inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.inline .inp { width: auto; }
+
+/* toast */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 20; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+@media (max-width: 719px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
+@media (prefers-reduced-motion: no-preference) { .toast { animation: tin 160ms ease-out; } @keyframes tin { from { opacity: 0; transform: translate(-50%, 6px); } } }
+</style>
+
+<div class="app" id="app">
+  <div class="chrome">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="15" style="fill:var(--accent)"/><path d="M10 21c2-2.2-2-4.4 0-6.6s-2-4.4 0-6.6M15 21c2-2.2-2-4.4 0-6.6s-2-4.4 0-6.6M20 21c2-2.2-2-4.4 0-6.6s-2-4.4 0-6.6" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg>
+      <div>Sauna<small>companion</small></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Main"></nav>
+    <p class="simnote"><b>Simulation.</b> <span>Example data, generated in your browser. The backend, the AI and the watch are simulated.</span></p>
+  </div>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- utilities ----------
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+function fmt(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+const mmss = sec => `${Math.floor(sec / 60)}:${pad(Math.round(sec % 60))}`;
+function parseMmss(v) {
+  const m = String(v).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/);
+  if (!m) return null;
+  const s = m[2] ? +m[2] : 0;
+  return s >= 60 ? null : +m[1] * 60 + s;
+}
+const fmtMin = sec => `${Math.round(sec / 60)} min`;
+function shortMin(sec) { return sec % 60 ? mmss(sec) : `${sec / 60}′`; }
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const uid = p => p + '_' + Math.random().toString(16).slice(2, 8);
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtDate = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function ago(d) {
+  const m = Math.round((Date.now() - d.getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} h ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
+// ---------- domain ----------
+const KIND = { heat: 'Heat', cold: 'Cold', rest: 'Rest' };
+const HEAT_TYPES = ['Finnish', 'Löyly', 'Steam', 'Infrared'];
+const ZCOL = ['var(--z0)', '#9AA4AE', '#3FA9F5', '#43BE72', '#F2992B', '#EC4A45'];
+const BODY_MAX = 175, REST_HR = 62, WATCH_CAP = 8;
+
+const H = (min, temp, type = 'Finnish', label) => ({ kind: 'heat', label: label || (type === 'Steam' ? 'Steam' : type === 'Infrared' ? 'Infrared' : 'Sauna'), dur: Math.round(min * 60), temp, type });
+const Cd = (min, temp, label = 'Plunge') => ({ kind: 'cold', label, dur: Math.round(min * 60), temp });
+const Rs = (min, label = 'Rest') => ({ kind: 'rest', label, dur: Math.round(min * 60) });
+const rep = (n, f) => { const a = []; for (let i = 0; i < n; i++) a.push(...f(i).map(s => ({ ...s }))); return a; };
+const prog = (id, name, origin, steps, extra) => Object.assign({ id, name, origin, rev: 1, steps, copiedFrom: null, author: null, updatedAt: new Date(Date.now() - 86400000 * 20) }, extra || {});
+
+const rounds = steps => steps.filter(s => s.kind === 'heat').length;
+const total = steps => steps.reduce((a, s) => a + (s.dur || 0), 0);
+// A round starts at each heat step; steps before the first heat belong to round 1.
+function roundsOf(steps) { let r = 0; return steps.map(s => { if (s.kind === 'heat') r++; return Math.max(1, r); }); }
+function stepDetail(s) {
+  if (s.kind === 'heat') return `${s.temp ?? '?'}°C · ${s.type}`;
+  if (s.kind === 'cold') return s.temp != null ? `${s.temp}°C water` : 'water';
+  return s.label === 'Rest' ? 'Room air' : '';
+}
+
+// ---------- validation (DESIGN §11; numbers are placeholders) ----------
+function validate(p) {
+  const out = [], s = p.steps;
+  const add = (lvl, msg, i) => out.push({ lvl, msg, i });
+  if (!s.length) { add('block', 'The program has no steps.'); return out; }
+  if (!s.some(x => x.kind === 'heat')) add('block', 'The program has no heat step.');
+  s.forEach((x, i) => {
+    const n = `Step ${i + 1} (${x.label || KIND[x.kind]})`;
+    if (!(x.dur > 0)) add('block', `${n} has no length.`, i);
+    if (x.kind === 'heat') {
+      if (x.dur > 0 && x.dur < 60) add('block', `${n} is shorter than 1 min.`, i);
+      else if (x.dur > 1800) add('block', `${n} is longer than 30 min.`, i);
+      else if (x.dur > 1200) add('warn', `${n} is longer than 20 min.`, i);
+      if (x.temp > 110) add('block', `${n} is above 110°C.`, i);
+      else if (x.temp > 100) add('warn', `${n} is above 100°C.`, i);
+      if (i > 0 && s[i - 1].kind === 'heat') add('warn', `${n} follows another heat step with no cooling or rest between.`, i);
+    }
+    if (x.kind === 'cold') {
+      if (x.dur > 600) add('block', `${n} is longer than 10 min.`, i);
+      else if (x.dur > 300) add('warn', `${n} is longer than 5 min.`, i);
+      if (x.temp != null && x.temp < 0) add('block', `${n} has water below 0°C.`, i);
+      else if (x.temp != null && x.temp < 4) add('warn', `${n} has water below 4°C.`, i);
+    }
+  });
+  const r = rounds(s), t = total(s);
+  if (r > 10) add('block', `${r} rounds is more than 10.`); else if (r > 6) add('warn', `${r} rounds is more than 6.`);
+  if (t > 3 * 3600) add('block', `The session is longer than 3 h.`); else if (t > 2 * 3600) add('warn', `The session is longer than 2 h.`);
+  return out;
+}
+const isBlocked = p => validate(p).some(v => v.lvl === 'block');
+
+// ---------- example data ----------
+const BUILTIN = [
+  prog('b_classic', 'Classic Finnish', 'builtin', rep(3, () => [H(12, 85), Cd(2, 6), Rs(12)])),
+  prog('b_quick', 'Quick contrast', 'builtin', rep(5, () => [H(7, 90), Cd(1.5, 5), Rs(1, 'Transition')]).slice(0, -1)),
+  prog('b_first', 'First timer', 'builtin', rep(2, () => [H(8, 72), Cd(0.5, 16, 'Cold shower'), Rs(15)])),
+  prog('b_ladder', 'Heat ladder', 'builtin', rep(3, i => [H(8 + i * 3, 86 + i * 3, 'Löyly'), Cd(2, 6), Rs(10)]), { rev: 3 }),
+  prog('b_ir', 'Infrared unwind', 'builtin', rep(2, () => [H(22, 55, 'Infrared'), Cd(1, 18, 'Cold shower'), Rs(10)])),
+  prog('b_steam', 'Steam and plunge', 'builtin', rep(3, () => [H(12, 46, 'Steam'), Cd(1.5, 10), Rs(9)])),
+  prog('b_evening', 'Long rest evening', 'builtin', rep(2, () => [H(15, 80), Cd(2, 8), Rs(20)])),
+  prog('b_express', 'Two-round express', 'builtin', rep(2, () => [H(10, 88), Cd(1, 6), Rs(8)])),
+  prog('b_plunge', 'Plunge practice', 'builtin', rep(3, () => [H(10, 85), Cd(3, 5), Rs(10)])),
+  prog('b_social', 'Löyly social', 'builtin', rep(4, () => [H(10, 84, 'Löyly'), Cd(1, 10, 'Lake dip'), Rs(15)])),
+];
+const MINE = [
+  prog('m_ladder', 'Heat ladder, short', 'mine', rep(3, i => [H(8 + i * 2, 86 + i * 3, 'Löyly'), Cd(2, 6), Rs(10)]),
+    { rev: 3, copiedFrom: { id: 'b_ladder', rev: 2, origin: 'builtin', name: 'Heat ladder' }, updatedAt: new Date(Date.now() - 86400000 * 9) }),
+  prog('m_gym', 'Tuesday gym', 'mine', [...rep(2, () => [H(10, 46, 'Steam'), Cd(1, 15, 'Cold shower'), Rs(10)]), H(12, 85), Rs(10)],
+    { rev: 2, updatedAt: new Date(Date.now() - 86400000 * 30) }),
+];
+const COMMUNITY = [
+  prog('c_lake', 'Lake sauna winter routine', 'community', rep(3, () => [H(12, 80, 'Löyly'), Cd(2, 3, 'Lake dip'), Rs(15)]), { author: 'lakeside_plunge', rating: 4.6, downloads: 1240 }),
+  prog('c_hammam', 'Hammam slow', 'community', rep(3, () => [H(15, 45, 'Steam'), Cd(1, 20, 'Cold shower'), Rs(12)]), { author: 'hammam_hana', rating: 4.4, downloads: 580 }),
+  prog('c_smoke', 'Smoke sauna ladder', 'community', [H(10, 75), Rs(5), H(14, 78), Rs(5), H(18, 80), Cd(2, 6), Rs(15)], { author: 'kiuas_kalle', rating: 4.8, downloads: 2110 }),
+  prog('c_hot', '100 degree challenge', 'community', rep(3, () => [H(22, 112), Cd(5, 2, 'Ice bath'), Rs(5)]), { author: 'birch_whisk', rating: 2.1, downloads: 95 }),
+];
+const SAUNAS = [
+  { id: 'home', name: 'Home sauna', type: 'Finnish', temp: 85 },
+  { id: 'gym', name: 'Gym steam room', type: 'Steam', temp: 46 },
+  { id: 'lake', name: 'Lake sauna', type: 'Löyly', temp: 80 },
+];
+
+const st = {
+  view: 'overview',
+  sel: { sessions: null, programs: null },
+  open: false,
+  filter: 'all',
+  programs: [...BUILTIN, ...MINE, ...COMMUNITY],
+  watch: ['b_classic', 'm_ladder', 'b_quick', 'b_first', 'm_gym'],
+  synced: ['b_classic', 'm_ladder', 'b_quick', 'b_first', 'm_gym'],
+  lastSync: new Date(Date.now() - 2.2 * 3600000),
+  device: { name: 'Fenix 8', paired: true },
+  settings: { zoneSource: 'watch', maxHr: 175, warnAt: 'z5', warnBpm: 165, ai: true, mode: 'connected', zoneStrip: 'both' },
+  sessions: [],
+  editing: null,
+  confirmDel: null,
+  shareFor: null,
+  importOpen: false,
+  ambEdit: null,
+  sugCount: 0,
+  dismissed: 0,
+};
+
+// ---------- session simulation (same body model as the watch simulator) ----------
+function simulate(steps, gain, r) {
+  let hr = REST_HR + 4, sm = hr, t = 0;
+  const tr = [], laps = [];
+  steps.forEach((s, pi) => {
+    let sum = 0, n = 0, mx = 0, start = t, sm0 = sm;
+    for (let k = 0; k < s.dur; k++) {
+      let target, tau;
+      if (s.kind === 'heat') { const kf = s.type === 'Infrared' ? 0.55 : s.type === 'Steam' ? 0.76 : 1; target = REST_HR + (BODY_MAX - REST_HR) * gain * kf * (1 - Math.exp(-k / 360)); tau = 30; }
+      else if (s.kind === 'cold') { target = k < 25 ? REST_HR + 46 : REST_HR + 8; tau = k < 25 ? 6 : 15; }
+      else { target = REST_HR + 4; tau = 70; }
+      hr += (target - hr) * (1 - Math.exp(-1 / tau));
+      const raw = hr + (r() + r() + r() - 1.5) * 2.2;
+      sm += (raw - sm) * (1 - Math.exp(-1 / 6));
+      sum += sm; n++; mx = Math.max(mx, sm);
+      if (t % 10 === 0) tr.push([t, Math.round(sm), pi]);
+      t++;
+    }
+    laps.push({ kind: s.kind, label: s.label, dur: s.dur, start, avg: Math.round(sum / n), max: Math.round(mx), hrStart: Math.round(sm0) });
+  });
+  return { tr, laps, total: t };
+}
+
+function makeSessions() {
+  const r = mulberry(20261010);
+  const pick = a => a[Math.floor(r() * a.length)];
+  const plan = ['b_classic', 'b_classic', 'm_ladder', 'm_ladder', 'b_quick', 'm_gym', 'b_ladder', 'tracker', 'tracker', 'b_first'];
+  const out = [];
+  let day = 0;
+  for (let i = 0; i < 26; i++) {
+    day += i === 0 ? 0 : 1 + Math.floor(r() * 3);
+    const d = new Date(); d.setHours(17 + Math.floor(r() * 4), Math.floor(r() * 60), 0, 0); d.setDate(d.getDate() - day);
+    if (i === 0) d.setTime(Date.now() - 3.4 * 3600000);
+    const pid = pick(plan);
+    let steps, name, mode, sauna;
+    if (pid === 'tracker') {
+      mode = 'tracker'; name = 'Tracker'; sauna = pick([SAUNAS[0], SAUNAS[2]]);
+      const n = 2 + Math.floor(r() * 2); steps = [];
+      for (let k = 0; k < n; k++) {
+        steps.push({ kind: 'heat', label: 'Sauna', dur: (10 + Math.floor(r() * 7)) * 60 + Math.floor(r() * 50), temp: sauna.temp, type: sauna.type });
+        steps.push({ kind: 'cold', label: 'Cold', dur: 60 + Math.floor(r() * 120), temp: 6 });
+        if (k < n - 1 || r() < 0.7) steps.push({ kind: 'rest', label: 'Rest', dur: (8 + Math.floor(r() * 8)) * 60 });
+      }
+    } else {
+      const p = st.programs.find(x => x.id === pid);
+      mode = 'program'; name = p.name; steps = p.steps.map(s => ({ ...s }));
+      sauna = steps.some(s => s.type === 'Steam') ? SAUNAS[1] : pick([SAUNAS[0], SAUNAS[0], SAUNAS[2]]);
+    }
+    const gain = 0.6 + r() * 0.52;
+    const sim = simulate(steps, gain, r);
+    sim.laps.forEach((l, k) => {
+      const s = steps[k];
+      if (s.kind === 'heat') l.amb = mode === 'tracker' ? { v: Math.round(s.temp + (r() - 0.5) * 12), src: 'estimated' } : { v: s.temp, src: 'stated' };
+      else if (s.kind === 'cold') l.amb = { v: s.temp, src: 'stated' };
+    });
+    out.push({ id: 's' + i, date: d, name, programId: pid === 'tracker' ? null : pid, mode, sauna: sauna.name, steps, ...sim });
+  }
+  return out;
+}
+
+// ---------- derived values ----------
+function cutoffs() { const m = st.settings.maxHr; return [0.5, 0.6, 0.7, 0.8, 0.9].map(p => Math.round(p * m)); }
+function zoneOf(h) { const c = cutoffs(); let z = 0; for (let i = 0; i < 5; i++) if (h >= c[i]) z = i + 1; return z; }
+function warnLevel() {
+  const s = st.settings;
+  return s.warnAt === 'z5' ? cutoffs()[4] : s.warnAt === 'max' ? s.maxHr : s.warnAt === 'custom' ? s.warnBpm : null;
+}
+function stats(s) {
+  const zt = [0, 0, 0, 0, 0, 0];
+  let sum = 0, mx = 0, warnN = 0, warnT = 0, on = false;
+  const thr = warnLevel();
+  for (const [, h] of s.tr) {
+    zt[zoneOf(h)] += 10; sum += h; mx = Math.max(mx, h);
+    if (thr) { if (!on && h >= thr) { on = true; warnN++; } else if (on && h < thr - 2) on = false; if (on) warnT += 10; }
+  }
+  const kt = { heat: 0, cold: 0, rest: 0 };
+  s.laps.forEach(l => { kt[l.kind] += l.dur; });
+  return { zt, avg: Math.round(sum / s.tr.length), max: mx, warnN, warnT, ...kt, rounds: s.laps.filter(l => l.kind === 'heat').length };
+}
+
+// ---------- rendering helpers ----------
+function tlHtml(steps, big) {
+  return `<div class="tl${big ? ' big' : ''}" aria-hidden="true">${steps.map(s => `<i class="k-${s.kind}" style="flex-grow:${Math.max(1, s.dur)}"></i>`).join('')}</div>`;
+}
+function zoneStrip(zt, big) {
+  const t = zt.reduce((a, b) => a + b, 0) || 1;
+  return `<div class="zs${big ? ' big' : ''}" role="img" aria-label="Time per zone">${zt.map((v, z) => v ? `<i style="flex-grow:${v};background:${ZCOL[z]}"></i>` : '').join('')}</div>`;
+}
+function zoneTimeline(s) {
+  const parts = [];
+  let cur = null;
+  s.tr.forEach(([, h, p], i) => {
+    const z = zoneOf(h);
+    if (cur && (cur.z !== z || cur.p !== p)) { parts.push(cur); cur = null; }
+    if (!cur) cur = { z, p, n: 0 };
+    cur.n++;
+  });
+  if (cur) parts.push(cur);
+  let html = '', lastP = 0;
+  for (const c of parts) {
+    if (c.p !== lastP) { html += '<b class="notch"></b>'; lastP = c.p; }
+    html += `<i style="flex-grow:${c.n};background:${ZCOL[c.z]}"></i>`;
+  }
+  return `<div class="zs big" role="img" aria-label="Zones over time">${html}</div>`;
+}
+function srcBadge(p) {
+  const t = { builtin: 'Built-in', mine: 'Mine', community: 'Community', suggested: 'Suggested' }[p.origin];
+  return `<span class="src src-${p.origin}">${t}</span>`;
+}
+function validTag(p) {
+  const v = validate(p);
+  if (v.some(x => x.lvl === 'block')) return '<span class="tag tag-bad">Blocked</span>';
+  const w = v.filter(x => x.lvl === 'warn').length;
+  return w ? `<span class="tag tag-warn">${w} ${w === 1 ? 'note' : 'notes'}</span>` : '';
+}
+const icon = {
+  up: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 9l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  down: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  dup: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 9V3.5a1 1 0 011-1H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+  del: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  back: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 3l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const NAV = [
+  ['overview', 'Overview', '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'],
+  ['sessions', 'Sessions', '<path d="M3 12h4l2-6 4 12 2-6h6"/>'],
+  ['programs', 'Programs', '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>'],
+  ['insights', 'Insights', '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.8 2.2L21 19l-2.2.8L18 22l-.8-2.2L15 19l2.2-.8z"/>'],
+  ['settings', 'Settings', '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'],
+];
+function renderNav() {
+  const sug = st.programs.filter(p => p.origin === 'suggested').length;
+  document.getElementById('nav').innerHTML = NAV.map(([id, label, path]) =>
+    `<a href="#${id}" data-nav="${id}"${st.view === id ? ' aria-current="page"' : ''}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>${label}${id === 'insights' && sug ? `<span class="badge" aria-label="${sug} suggestions">${sug}</span>` : ''}</a>`).join('');
+}
+
+// ---------- watch status ----------
+function pendingChanges() {
+  const a = st.watch, b = st.synced;
+  if (a.length !== b.length) return Math.abs(a.length - b.length) + a.filter(x => !b.includes(x)).length;
+  let n = 0; a.forEach((x, i) => { if (b[i] !== x) n++; });
+  return n;
+}
+function watchHead() {
+  const n = pendingChanges();
+  return `<div class="watch-head"><div class="dial"><b>${pad(new Date().getHours())}:${pad(new Date().getMinutes())}</b></div>
+    <div class="wh"><strong>${esc(st.device.name)}</strong>
+    <span class="status"><span class="dot${n ? ' pending' : ''}"></span>${n ? `${n} ${n === 1 ? 'change' : 'changes'} waiting for the watch` : `Up to date, synced ${ago(st.lastSync)}`}</span></div></div>`;
+}
+function watchCard(full) {
+  const n = pendingChanges();
+  const items = st.watch.map((id, i) => {
+    const p = st.programs.find(x => x.id === id);
+    if (!p) return '';
+    return `<li><span class="pos">${i + 1}</span><span class="nm"><span>${esc(p.name)}</span>${tlHtml(p.steps)}</span>
+      ${full ? `<span class="ctl"><button class="btn ghost icon" data-act="w-up" data-id="${p.id}" aria-label="Move ${esc(p.name)} up"${i === 0 ? ' disabled' : ''}>${icon.up}</button><button class="btn ghost icon" data-act="w-down" data-id="${p.id}" aria-label="Move ${esc(p.name)} down"${i === st.watch.length - 1 ? ' disabled' : ''}>${icon.down}</button><button class="btn ghost icon" data-act="w-remove" data-id="${p.id}" aria-label="Remove ${esc(p.name)} from the watch">${icon.del}</button></span>` : '<span></span>'}</li>`;
+  }).join('');
+  return `<section class="card" aria-label="Your watch">
+    <h2>On your watch <span class="cap${st.watch.length >= WATCH_CAP ? ' full' : ''}">${st.watch.length} of ${WATCH_CAP}</span></h2>
+    ${watchHead()}
+    ${st.watch.length ? `<ol class="olist">${items}</ol>` : '<p class="empty">No programs on the watch. Tick programs in the library to add them.</p>'}
+    ${full ? `<p class="hint">The watch fetches this list when the sauna app starts with the phone nearby. The order here is the order on the watch.</p>` : ''}
+    ${n && full ? `<div><button class="btn sm" data-act="sim-sync">Simulate watch sync</button></div>` : ''}
+  </section>`;
+}
+
+// ---------- chart ----------
+function chartSvg(s, w, compact) {
+  const h = compact ? 130 : Math.max(200, Math.min(300, w * 0.42));
+  const L = compact ? 6 : 34, R = compact ? 6 : 46, T = 10, B = compact ? 6 : 24;
+  const pw = w - L - R, ph = h - T - B;
+  const ymin = 50, ymax = Math.max(190, st.settings.maxHr + 10);
+  const tot = s.total;
+  const X = t => L + pw * t / tot, Y = v => T + ph * (1 - (v - ymin) / (ymax - ymin));
+  let g = '';
+  // Colours go through style="" so the theme's CSS variables resolve inside SVG.
+  // phase bands
+  s.laps.forEach(l => {
+    if (l.kind === 'rest') return;
+    g += `<rect x="${X(l.start).toFixed(1)}" y="${T}" width="${(X(l.start + l.dur) - X(l.start)).toFixed(1)}" height="${ph}" style="fill:var(--${l.kind});opacity:0.1"/>`;
+  });
+  // zone cutoffs
+  if (!compact) {
+    cutoffs().forEach((c, i) => {
+      if (c < ymin || c > ymax) return;
+      g += `<line x1="${L}" x2="${L + pw}" y1="${Y(c).toFixed(1)}" y2="${Y(c).toFixed(1)}" style="stroke:var(--chart-grid);stroke-width:1"/>`;
+      g += `<text x="${L + pw + 6}" y="${(Y(c) - 3).toFixed(1)}" font-size="11" font-weight="600" style="fill:${ZCOL[i + 1]}">Z${i + 1}</text>`;
+    });
+    const thr = warnLevel();
+    if (thr && thr <= ymax) {
+      g += `<line x1="${L}" x2="${L + pw}" y1="${Y(thr).toFixed(1)}" y2="${Y(thr).toFixed(1)}" style="stroke:var(--bad);stroke-width:1.2;stroke-dasharray:5 4"/>`;
+      g += `<text x="${L + pw + 6}" y="${(Y(thr) + 12).toFixed(1)}" font-size="11" style="fill:var(--bad)">${thr}</text>`;
+    }
+    for (let v = 60; v <= ymax; v += 40) g += `<text x="${L - 6}" y="${(Y(v) + 4).toFixed(1)}" font-size="11" text-anchor="end" style="fill:var(--muted)">${v}</text>`;
+    const step = tot > 5400 ? 1800 : tot > 2700 ? 900 : 600;
+    for (let t = 0; t <= tot; t += step) {
+      g += `<line x1="${X(t).toFixed(1)}" x2="${X(t).toFixed(1)}" y1="${T + ph}" y2="${T + ph + 4}" style="stroke:var(--line)"/>`;
+      g += `<text x="${X(t).toFixed(1)}" y="${T + ph + 17}" font-size="11" text-anchor="middle" style="fill:var(--muted)">${Math.round(t / 60)}′</text>`;
+    }
+    g += `<line x1="${L}" x2="${L + pw}" y1="${T + ph}" y2="${T + ph}" style="stroke:var(--line)"/>`;
+  }
+  // HR line, coloured by zone
+  let runZ = null, pts = [];
+  const flush = () => { if (pts.length > 1) g += `<polyline points="${pts.join(' ')}" style="fill:none;stroke:${ZCOL[runZ]};stroke-width:${compact ? 2 : 2.4};stroke-linejoin:round;stroke-linecap:round"/>`; };
+  s.tr.forEach(([t, v]) => {
+    const z = zoneOf(v), p = `${X(t).toFixed(1)},${Y(v).toFixed(1)}`;
+    if (z !== runZ) { if (runZ !== null) { pts.push(p); flush(); } runZ = z; pts = [p]; }
+    else pts.push(p);
+  });
+  flush();
+  if (!compact) g += `<g class="cross" visibility="hidden"><line y1="${T}" y2="${T + ph}" style="stroke:var(--ink);stroke-width:1;opacity:0.5"/><rect rx="6" height="36" style="fill:var(--surface);stroke:var(--line)"/><text font-size="12" style="fill:var(--ink)"></text><text font-size="11.5" style="fill:var(--muted)"></text></g>`;
+  return { svg: `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="Heart rate over the session">${g}</svg>`, X, L, pw, h, T, ph };
+}
+function mountCharts() {
+  document.querySelectorAll('[data-chart]').forEach(box => {
+    const s = st.sessions.find(x => x.id === box.dataset.chart);
+    const compact = box.dataset.compact === '1';
+    const w = Math.max(240, box.clientWidth);
+    const c = chartSvg(s, w, compact);
+    box.innerHTML = c.svg;
+    if (compact) return;
+    const svg = box.firstChild, cross = svg.querySelector('.cross');
+    const [line, rect, t1, t2] = cross.children;
+    const move = e => {
+      const bb = svg.getBoundingClientRect();
+      const x = (e.clientX - bb.left) * (w / bb.width);
+      const t = Math.max(0, Math.min(s.total, (x - c.L) / c.pw * s.total));
+      const pt = s.tr[Math.min(s.tr.length - 1, Math.round(t / 10))];
+      const lap = s.laps[pt[2]];
+      const px = c.X(pt[0]);
+      line.setAttribute('x1', px); line.setAttribute('x2', px);
+      t1.textContent = `${pt[1]} bpm · Z${zoneOf(pt[1])}`;
+      t2.textContent = `${fmt(pt[0])} · ${lap.label}`;
+      const bw = 120, bx = px + 8 + bw > w ? px - 8 - bw : px + 8;
+      rect.setAttribute('x', bx); rect.setAttribute('y', c.T + 4); rect.setAttribute('width', bw);
+      t1.setAttribute('x', bx + 9); t1.setAttribute('y', c.T + 19);
+      t2.setAttribute('x', bx + 9); t2.setAttribute('y', c.T + 34);
+      cross.setAttribute('visibility', 'visible');
+    };
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', () => cross.setAttribute('visibility', 'hidden'));
+  });
+}
+
+// ---------- views ----------
+function viewOverview() {
+  const now = Date.now();
+  const week = st.sessions.filter(s => now - s.date.getTime() < 7 * 86400000);
+  const prev = st.sessions.filter(s => now - s.date.getTime() >= 7 * 86400000 && now - s.date.getTime() < 14 * 86400000);
+  const sum = (arr, k) => arr.reduce((a, s) => a + stats(s)[k], 0);
+  const last = st.sessions[0], ls = stats(last);
+  const ins = insights()[0];
+  const sugs = st.programs.filter(p => p.origin === 'suggested');
+  return `<div class="page">
+    <div class="phead"><div><h1>Overview</h1><p>Your last seven days, the latest session, and what the watch is carrying.</p></div></div>
+    <dl class="tiles">
+      <div class="tile"><dt>Sessions</dt><dd>${week.length}<small>this week</small></dd><div class="sub">${prev.length} the week before</div></div>
+      <div class="tile"><dt>Heat</dt><dd>${Math.round(sum(week, 'heat') / 60)}<small>min</small></dd><div class="sub">${Math.round(sum(prev, 'heat') / 60)} min the week before</div></div>
+      <div class="tile"><dt>Cold</dt><dd>${Math.round(sum(week, 'cold') / 60)}<small>min</small></dd><div class="sub">${Math.round(sum(prev, 'cold') / 60)} min the week before</div></div>
+      <div class="tile"><dt>Warnings</dt><dd>${week.reduce((a, s) => a + stats(s).warnN, 0)}</dd><div class="sub">heart rate above ${warnLevel() ?? '–'} bpm</div></div>
+    </dl>
+    <div class="grid2">
+      <section class="card">
+        <h2>Last session <button class="linkbtn" data-act="open-session" data-id="${last.id}">Open</button></h2>
+        <div class="dh"><h2 style="font-size:22px">${esc(last.name)}</h2>
+          <div class="meta"><span>${fmtDate(last.date)}, ${fmtTime(last.date)}</span><span>${esc(last.sauna)}</span><span class="num">${fmt(last.total)}</span><span class="num">max ${ls.max} bpm</span></div></div>
+        <div class="chartbox" data-chart="${last.id}" data-compact="1"></div>
+        ${zoneStrip(ls.zt, true)}
+      </section>
+      ${watchCard(false)}
+    </div>
+    <div class="grid2">
+      <section class="card insight">
+        <h2>Latest insight <button class="linkbtn" data-nav="insights">All insights</button></h2>
+        <p>${ins.text}</p>
+        <div class="ev"><span class="lvl${ins.level === 'Your data' ? ' data' : ''}">${ins.level}</span>${ins.note ? `<span>${ins.note}</span>` : ''}</div>
+      </section>
+      <section class="card">
+        <h2>Suggested programs <button class="linkbtn" data-nav="insights">Review</button></h2>
+        ${sugs.length ? sugs.map(p => `<div style="display:grid;gap:6px"><strong>${esc(p.name)}</strong>${tlHtml(p.steps)}<span class="hint">${esc(p.rationale || '')}</span></div>`).join('') : '<p class="empty">No suggestions waiting.</p>'}
+      </section>
+    </div>
+  </div>`;
+}
+
+function viewSessions() {
+  const sel = st.sessions.find(s => s.id === st.sel.sessions) || null;
+  const list = st.sessions.map(s => {
+    const x = stats(s);
+    return `<div class="row srow" role="option" tabindex="0" data-act="sel-session" data-id="${s.id}" aria-selected="${sel && sel.id === s.id}">
+      <div style="min-width:0;display:grid;gap:2px"><span class="title">${esc(s.name)}</span><span class="meta"><span>${fmtDate(s.date)}</span><span>${esc(s.sauna)}</span>${x.warnN ? `<span class="tag tag-bad">${x.warnN} ${x.warnN === 1 ? 'warning' : 'warnings'}</span>` : ''}</span></div>
+      <div class="right"><span class="num">${fmt(s.total)}</span><span class="num" style="color:${ZCOL[zoneOf(x.max)]};font-weight:700">${x.max}</span></div>
+      ${zoneStrip(x.zt)}
+    </div>`;
+  }).join('');
+  return `<div class="page">
+    <div class="phead"><div><h1>Sessions</h1><p>${st.sessions.length} sessions over the last eight weeks. Bars show time per heart rate zone.</p></div></div>
+    <div class="split${st.open ? ' open' : ''}">
+      <div class="list"><div class="rows" role="listbox" aria-label="Sessions">${list}</div></div>
+      <div class="detail">${sel ? sessionDetail(sel) : `<section class="card"><p class="empty">Select a session to see its heart rate, phases and ambient values.</p></section>`}</div>
+    </div>
+  </div>`;
+}
+function sessionDetail(s) {
+  const x = stats(s);
+  const rows = s.laps.map((l, i) => {
+    const prevHeat = s.laps.slice(0, i + 1).filter(q => q.kind === 'heat').length;
+    let amb = '–';
+    if (l.amb) {
+      if (st.ambEdit && st.ambEdit.s === s.id && st.ambEdit.i === i) {
+        amb = `<span class="amb"><input class="inp num" id="amb-in" type="number" value="${l.amb.v}" aria-label="Temperature in °C"><button class="btn sm primary" data-act="amb-save" data-id="${s.id}" data-i="${i}">Save</button><button class="btn sm ghost" data-act="amb-cancel">Cancel</button></span>`;
+      } else {
+        amb = `<span class="amb"><span class="num">${l.amb.src === 'estimated' ? '~' : ''}${l.amb.v}°C</span><span class="tag tag-src">${l.amb.src}</span><button class="btn sm ghost" data-act="amb-edit" data-id="${s.id}" data-i="${i}" aria-label="Correct the temperature">Edit</button></span>`;
+      }
+    }
+    return `<tr${l.kind === 'heat' && i > 0 ? ' class="round-start"' : ''}><td><span class="kdot" style="background:var(--${l.kind})"></span>${esc(l.label)}${l.kind === 'heat' ? ` <span class="hint" style="display:inline">R${prevHeat}</span>` : ''}</td>
+      <td class="r num">${fmt(l.dur)}</td><td class="r num">${l.avg}</td><td class="r num" style="color:${ZCOL[zoneOf(l.max)]};font-weight:700">${l.max}</td><td>${amb}</td></tr>`;
+  }).join('');
+  return `<button class="btn backbtn" data-act="back">${icon.back} Sessions</button>
+  <section class="card">
+    <div class="dh"><h2>${esc(s.name)}</h2><div class="meta"><span>${fmtDate(s.date)}, ${fmtTime(s.date)}</span><span>${esc(s.sauna)}</span><span>${s.mode === 'tracker' ? 'Tracker' : 'Program'}</span></div></div>
+    <dl class="statline">
+      <div><dt>Total</dt><dd>${fmt(s.total)}</dd></div>
+      <div><dt>Heat</dt><dd style="color:var(--heat)">${fmt(x.heat)}</dd></div>
+      <div><dt>Cold</dt><dd style="color:var(--cold)">${fmt(x.cold)}</dd></div>
+      <div><dt>Avg/max HR</dt><dd>${x.avg}/<span style="color:${ZCOL[zoneOf(x.max)]}">${x.max}</span></dd></div>
+      <div><dt>Warnings</dt><dd${x.warnN ? ' style="color:var(--bad)"' : ''}>${x.warnN ? `${x.warnN}× ${fmt(x.warnT)}` : '0'}</dd></div>
+    </dl>
+    <div class="chartbox" data-chart="${s.id}"></div>
+    <div class="legend"><span><i style="background:var(--heat);opacity:.35"></i>Heat</span><span><i style="background:var(--cold);opacity:.35"></i>Cold</span>${[1, 2, 3, 4, 5].map(z => `<span><i style="background:${ZCOL[z]}"></i>Z${z}</span>`).join('')}<span><i style="background:var(--bad)"></i>Warning level</span></div>
+  </section>
+  <section class="card">
+    <h2>Zones</h2>
+    <div style="display:grid;gap:8px">
+      <div class="field"><span>Over time, with a notch at each phase change</span>${zoneTimeline(s)}</div>
+      <div class="field"><span>Time per zone</span>${zoneStrip(x.zt, true)}</div>
+    </div>
+    <div class="legend">${x.zt.map((v, z) => v ? `<span><i style="background:${ZCOL[z]}"></i>${z ? 'Z' + z : 'Below Z1'} <span class="num">${fmt(v)}</span></span>` : '').join('')}</div>
+  </section>
+  <section class="card">
+    <h2>Phases</h2>
+    <div class="tablewrap"><table class="steps"><thead><tr><th>Phase</th><th class="r">Time</th><th class="r">Avg</th><th class="r">Max</th><th>Ambient</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="hint">Ambient values show their source: stated (from the program or a saved sauna), estimated (from the watch's internal sensor) or sensor (an external thermometer). Correcting a value marks it as stated.</p>
+  </section>`;
+}
+
+function filtered() {
+  const f = st.filter;
+  if (f === 'watch') return st.watch.map(id => st.programs.find(p => p.id === id)).filter(Boolean);
+  return st.programs.filter(p => f === 'all' ? p.origin !== 'suggested' : p.origin === f);
+}
+function viewPrograms() {
+  const counts = { all: st.programs.filter(p => p.origin !== 'suggested').length, watch: st.watch.length };
+  ['builtin', 'mine', 'community', 'suggested'].forEach(o => { counts[o] = st.programs.filter(p => p.origin === o).length; });
+  const F = [['all', 'All'], ['watch', 'On watch'], ['builtin', 'Built-in'], ['mine', 'Mine'], ['community', 'Community'], ['suggested', 'Suggested']];
+  const selP = st.programs.find(p => p.id === st.sel.programs) || null;
+  const list = filtered();
+  const rows = list.map(p => {
+    const on = st.watch.includes(p.id), blocked = isBlocked(p), sug = p.origin === 'suggested';
+    const dis = sug || (blocked && !on);
+    const why = sug ? 'Accept the suggestion before it can go on the watch' : blocked ? 'Fix the blocking issues before it can go on the watch' : on ? 'Remove from the watch' : 'Put on the watch';
+    return `<div class="row prow" role="option" tabindex="0" data-act="sel-program" data-id="${p.id}" aria-selected="${selP && selP.id === p.id}">
+      <label class="wcheck" title="${why}"><input type="checkbox" data-act="w-toggle" data-id="${p.id}"${on ? ' checked' : ''}${dis ? ' disabled' : ''} aria-label="${esc(p.name)} on the watch"></label>
+      <div style="min-width:0;display:grid;gap:3px"><span class="title">${esc(p.name)}</span>
+        <span class="meta">${srcBadge(p)}<span>${rounds(p.steps)} rounds · ${fmtMin(total(p.steps))}</span>${p.author ? `<span>@${esc(p.author)}</span>` : ''}</span></div>
+      <span>${validTag(p)}</span>
+      ${tlHtml(p.steps)}
+    </div>`;
+  }).join('');
+  let detail;
+  if (st.editing) detail = builder();
+  else if (selP) detail = programDetail(selP);
+  else detail = (st.filter === 'watch' ? '' : watchCard(true)) + `<section class="card"><p class="empty">Select a program to see its steps. Tick the box next to a program to put it on the watch.</p></section>`;
+  return `<div class="page">
+    <div class="phead"><div><h1>Programs</h1><p>Built-in programs, your own, programs shared by others, and suggestions. Up to ${WATCH_CAP} can be on the watch.</p></div>
+      <div class="actions"><button class="btn" data-act="import-open">Import shared program</button><button class="btn primary" data-act="new-program">New program</button></div></div>
+    ${st.importOpen ? `<section class="card"><h2>Import a shared program</h2><p class="hint">Paste a share code. Imported programs are added to Mine, with the original author noted. Try <span class="code" style="font-size:14px">SAUNA-7Q2K9D</span>.</p>
+      <div class="inline"><input class="inp num" id="import-code" placeholder="SAUNA-…" aria-label="Share code" style="max-width:200px"><button class="btn primary" data-act="import-do">Import</button><button class="btn ghost" data-act="import-close">Cancel</button></div></section>` : ''}
+    <div class="chips" role="group" aria-label="Filter programs">${F.map(([k, l]) => `<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${st.filter === k}">${l}<span class="n">${counts[k]}</span></button>`).join('')}</div>
+    <div class="split${st.open ? ' open' : ''}">
+      <div class="list">
+        ${st.filter === 'watch' ? watchCard(true) : (list.length ? `<div class="rows" role="listbox" aria-label="Programs">${rows}</div>` : `<section class="card"><p class="empty">${st.filter === 'suggested' ? 'No suggestions. Generate one on the Insights page.' : 'Nothing here yet.'}</p></section>`)}
+      </div>
+      <div class="detail">${detail}</div>
+    </div>
+  </div>`;
+}
+
+function programDetail(p) {
+  const v = validate(p), blocks = v.filter(x => x.lvl === 'block'), warns = v.filter(x => x.lvl === 'warn');
+  const on = st.watch.includes(p.id);
+  const rs = roundsOf(p.steps);
+  const rows = p.steps.map((s, i) => `<tr${i > 0 && rs[i] !== rs[i - 1] ? ' class="round-start"' : ''}><td class="num" style="color:var(--muted)">${rs[i]}</td><td><span class="kdot" style="background:var(--${s.kind})"></span>${esc(s.label)}</td><td>${esc(stepDetail(s))}</td><td class="r num">${shortMin(s.dur)}</td></tr>`).join('');
+  let notices = '';
+  if (p.copiedFrom) {
+    const orig = st.programs.find(x => x.id === p.copiedFrom.id);
+    const newer = orig && orig.rev > p.copiedFrom.rev;
+    notices += `<div class="notice ${newer ? 'warn' : 'info'}"><span>Copy of <strong>${esc(p.copiedFrom.name)}</strong> (${p.copiedFrom.origin === 'builtin' ? 'built-in' : p.copiedFrom.origin}, revision ${p.copiedFrom.rev}).${newer ? ` The original is now at revision ${orig.rev}.` : ''}</span>${newer ? `<button class="btn sm" data-act="sel-program" data-id="${orig.id}">View original</button>` : ''}</div>`;
+  }
+  if (p.importedFrom) notices += `<div class="notice info"><span>Imported from a share code by <strong>@${esc(p.importedFrom)}</strong>.</span></div>`;
+  if (p.origin === 'suggested') notices += `<div class="notice ai"><span><strong>Suggested.</strong> ${esc(p.rationale)}</span></div>`;
+  else if (p.suggestedNote) notices += `<div class="notice info"><span>Accepted from a suggestion: ${esc(p.suggestedNote)}</span></div>`;
+  if (blocks.length) notices += `<div class="notice bad"><span><strong>Can't go on the watch.</strong> Fix the blocking issues below${p.origin === 'mine' ? '' : ' in your own copy'}.</span></div>`;
+  let actions = '';
+  if (p.origin === 'suggested') actions = `<button class="btn primary" data-act="accept" data-id="${p.id}"${blocks.length ? ' disabled' : ''}>Accept</button><button class="btn" data-act="dismiss" data-id="${p.id}">Dismiss</button>`;
+  else if (p.origin === 'mine') actions = `<button class="btn primary" data-act="edit" data-id="${p.id}">Edit</button><button class="btn" data-act="clone" data-id="${p.id}">Clone</button><button class="btn" data-act="share" data-id="${p.id}">Share</button><button class="btn danger" data-act="del" data-id="${p.id}">Delete</button>`;
+  else actions = `<button class="btn primary" data-act="edit" data-id="${p.id}">Edit a copy</button><button class="btn" data-act="share" data-id="${p.id}">Share</button>`;
+  const share = st.shareFor === p.id ? `<div class="notice info sharebox"><span>Share code</span><span class="code" id="share-code">${shareCode(p)}</span><button class="btn sm" data-act="copy-code">Copy</button><span class="hint">Anyone with the code can import a copy. A link or QR code would carry the same program.</span></div>` : '';
+  const del = st.confirmDel === p.id ? `<div class="notice bad"><span>Delete <strong>${esc(p.name)}</strong>? ${on ? 'It will also be removed from the watch.' : ''}</span><span class="actions"><button class="btn sm danger solid" data-act="del-yes" data-id="${p.id}">Delete</button><button class="btn sm" data-act="del-no">Keep</button></span></div>` : '';
+  return `<button class="btn backbtn" data-act="back">${icon.back} Programs</button>
+  <section class="card">
+    <div class="dh"><h2>${esc(p.name)}</h2>
+      <div class="meta">${srcBadge(p)}<span class="num">${rounds(p.steps)} rounds · ${fmt(total(p.steps))}</span>${p.origin !== 'suggested' ? `<span>revision ${p.rev}</span>` : ''}${p.author ? `<span>@${esc(p.author)} · ${p.rating}★ · ${p.downloads} imports</span>` : ''}</div></div>
+    ${tlHtml(p.steps, true)}
+    ${notices}
+    <div class="actions">${actions}
+      ${p.origin !== 'suggested' ? `<label class="toggle" style="margin-left:auto;align-items:center"><input type="checkbox" data-act="w-toggle" data-id="${p.id}"${on ? ' checked' : ''}${blocks.length && !on ? ' disabled' : ''}>On the watch</label>` : ''}</div>
+    ${share}${del}
+  </section>
+  <section class="card">
+    <h2>Steps</h2>
+    <div class="tablewrap"><table class="steps"><thead><tr><th>Round</th><th>Step</th><th>Detail</th><th class="r">Length</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </section>
+  <section class="card">
+    <h2>Checks</h2>
+    ${v.length ? `<ul class="vlist">${v.map(x => `<li><span class="tag ${x.lvl === 'block' ? 'tag-bad' : 'tag-warn'}">${x.lvl === 'block' ? 'Blocks' : 'Note'}</span><span>${esc(x.msg)}</span></li>`).join('')}</ul>` : '<p class="hint"><span class="tag-ok">✓</span> Passes all checks.</p>'}
+    <p class="hint">The same checks apply to every program, whatever its source. The limits are placeholders until reviewed.</p>
+  </section>`;
+}
+function shareCode(p) {
+  let h = 0; for (const c of p.id + p.rev) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return 'SAUNA-' + h.toString(36).toUpperCase().padStart(6, '0').slice(-6);
+}
+
+// ---------- builder ----------
+function builder() {
+  const e = st.editing, p = e.draft;
+  const v = validate(p);
+  const flags = {};
+  v.forEach(x => { if (x.i != null) flags[x.i] = flags[x.i] === 'block' ? 'block' : x.lvl; });
+  const rs = roundsOf(p.steps);
+  const stepsHtml = p.steps.map((s, i) => `<div class="bstep ${s.kind}${flags[i] ? ' flag-' + flags[i] : ''}">
+      <span class="rd" title="Round">R${rs[i]}</span>
+      <select class="inp" data-bind="kind" data-i="${i}" aria-label="Step ${i + 1} type">${['heat', 'cold', 'rest'].map(k => `<option value="${k}"${s.kind === k ? ' selected' : ''}>${KIND[k]}</option>`).join('')}</select>
+      <input class="inp label" data-bind="label" data-i="${i}" value="${esc(s.label)}" aria-label="Step ${i + 1} name">
+      <input class="inp num" data-bind="dur" data-i="${i}" value="${mmss(s.dur)}" inputmode="numeric" aria-label="Step ${i + 1} length, minutes and seconds" title="Length, m:ss">
+      ${s.kind === 'rest' ? '<span class="na">–</span>' : `<span class="unit" data-u="°C"><input class="inp num" type="number" data-bind="temp" data-i="${i}" value="${s.temp ?? ''}" aria-label="Step ${i + 1} ${s.kind === 'heat' ? 'air' : 'water'} temperature"></span>`}
+      ${s.kind === 'heat' ? `<select class="inp" data-bind="type" data-i="${i}" aria-label="Step ${i + 1} sauna type">${HEAT_TYPES.map(t => `<option${s.type === t ? ' selected' : ''}>${t}</option>`).join('')}</select>` : '<span class="na">–</span>'}
+      <span class="ctl"><button class="btn ghost icon" data-act="b-up" data-i="${i}" aria-label="Move step ${i + 1} up"${i === 0 ? ' disabled' : ''}>${icon.up}</button><button class="btn ghost icon" data-act="b-down" data-i="${i}" aria-label="Move step ${i + 1} down"${i === p.steps.length - 1 ? ' disabled' : ''}>${icon.down}</button><button class="btn ghost icon" data-act="b-dup" data-i="${i}" aria-label="Duplicate step ${i + 1}">${icon.dup}</button><button class="btn ghost icon" data-act="b-del" data-i="${i}" aria-label="Remove step ${i + 1}">${icon.del}</button></span>
+    </div>`).join('');
+  return `<section class="card">
+    <h2>${e.isNew ? 'New program' : e.copyOf ? 'Edit a copy' : 'Edit program'}</h2>
+    ${e.copyOf ? `<div class="notice info"><span>${esc(e.copyOf.name)} is ${e.copyOf.origin === 'builtin' ? 'built-in' : 'shared by @' + esc(e.copyOf.author)}, so your changes are saved as a new program in Mine, linked to the original.</span></div>` : ''}
+    <div class="field"><label for="b-name">Name</label><input class="inp" id="b-name" data-bind="name" value="${esc(p.name)}"></div>
+    <div id="b-preview">${builderPreview(p)}</div>
+  </section>
+  <section class="card">
+    <h2>Steps <span class="hint" style="text-transform:none;letter-spacing:0">A round starts at each heat step</span></h2>
+    <div class="bhead" aria-hidden="true"><span></span><span>Type</span><span>Name</span><span>Length</span><span>Temp</span><span>Sauna</span><span></span></div>
+    <div class="bsteps">${stepsHtml || '<p class="empty">No steps yet. Add one below.</p>'}</div>
+    <div class="adds"><button class="btn sm" data-act="b-add" data-k="heat">+ Heat</button><button class="btn sm" data-act="b-add" data-k="cold">+ Cold</button><button class="btn sm" data-act="b-add" data-k="rest">+ Rest</button><button class="btn sm" data-act="b-repeat"${rounds(p.steps) ? '' : ' disabled'}>Repeat last round</button></div>
+  </section>
+  <section class="card">
+    <h2>Checks</h2>
+    <div id="b-valid">${builderValid(p)}</div>
+    <div class="sticky-bar"><span class="hint">${e.isNew || e.copyOf ? 'Saves as a new program in Mine.' : `Saving makes revision ${p.rev + 1}.`}</span>
+      <span class="actions"><button class="btn" data-act="b-cancel">Cancel</button><button class="btn primary" data-act="b-save">Save</button></span></div>
+  </section>`;
+}
+function builderPreview(p) {
+  return `<div style="display:grid;gap:6px">${tlHtml(p.steps, true)}<span class="hint num">${rounds(p.steps)} rounds · ${fmt(total(p.steps))} · heat ${fmt(p.steps.filter(s => s.kind === 'heat').reduce((a, s) => a + s.dur, 0))} · cold ${fmt(p.steps.filter(s => s.kind === 'cold').reduce((a, s) => a + s.dur, 0))}</span></div>`;
+}
+function builderValid(p) {
+  const v = validate(p);
+  if (!v.length) return '<p class="hint"><span class="tag-ok">✓</span> Passes all checks. It can go on the watch.</p>';
+  const b = v.some(x => x.lvl === 'block');
+  return `<ul class="vlist">${v.map(x => `<li><span class="tag ${x.lvl === 'block' ? 'tag-bad' : 'tag-warn'}">${x.lvl === 'block' ? 'Blocks' : 'Note'}</span><span>${esc(x.msg)}</span></li>`).join('')}</ul>
+    <p class="hint">${b ? 'You can save it, but it cannot go on the watch until the blocking issues are fixed.' : 'Notes do not stop it from going on the watch.'}</p>`;
+}
+function refreshBuilderParts() {
+  const p = st.editing.draft;
+  const pv = document.getElementById('b-preview'), vv = document.getElementById('b-valid');
+  if (pv) pv.innerHTML = builderPreview(p);
+  if (vv) vv.innerHTML = builderValid(p);
+  const v = validate(p), flags = {};
+  v.forEach(x => { if (x.i != null) flags[x.i] = flags[x.i] === 'block' ? 'block' : x.lvl; });
+  document.querySelectorAll('.bstep').forEach((el, i) => { el.classList.toggle('flag-warn', flags[i] === 'warn'); el.classList.toggle('flag-block', flags[i] === 'block'); });
+}
+function newStep(k) {
+  return k === 'heat' ? { kind: 'heat', label: 'Sauna', dur: 600, temp: 85, type: 'Finnish' }
+    : k === 'cold' ? { kind: 'cold', label: 'Plunge', dur: 120, temp: 6 }
+    : { kind: 'rest', label: 'Rest', dur: 600 };
+}
+function startEdit(p, mode) {
+  const copy = p ? JSON.parse(JSON.stringify(p.steps)) : [];
+  if (mode === 'new') st.editing = { isNew: true, draft: { id: null, name: 'My program', origin: 'mine', rev: 0, steps: [newStep('heat'), newStep('cold'), newStep('rest')] } };
+  else if (p.origin === 'mine' && mode === 'edit') st.editing = { draft: { ...p, steps: copy }, targetId: p.id };
+  else st.editing = { copyOf: p.origin === 'mine' ? null : p, isNew: p.origin === 'mine', draft: { id: null, name: `${p.name}${mode === 'clone' ? ' (copy)' : ''}`, origin: 'mine', rev: 0, steps: copy, copiedFrom: { id: p.id, rev: p.rev, origin: p.origin, name: p.name } } };
+  st.open = true;
+}
+function saveEdit() {
+  const e = st.editing, d = e.draft;
+  d.name = d.name.trim() || 'Untitled program';
+  let id;
+  if (e.targetId) {
+    const p = st.programs.find(x => x.id === e.targetId);
+    Object.assign(p, { name: d.name, steps: d.steps, rev: p.rev + 1, updatedAt: new Date() });
+    id = p.id; toast(`Saved revision ${p.rev}.`);
+  } else {
+    id = uid('m');
+    st.programs.push({ id, name: d.name, origin: 'mine', rev: 1, steps: d.steps, copiedFrom: d.copiedFrom || null, author: null, updatedAt: new Date() });
+    toast(`Saved "${d.name}" to Mine.`);
+  }
+  const p = st.programs.find(x => x.id === id);
+  if (isBlocked(p) && st.watch.includes(id)) { st.watch = st.watch.filter(x => x !== id); toast('Saved. Removed from the watch until the blocking issues are fixed.'); }
+  st.editing = null; st.sel.programs = id; st.filter = st.filter === 'watch' || st.filter === 'mine' ? st.filter : 'all';
+}
+
+// ---------- insights (simulated AI) ----------
+function insights() {
+  const last10 = st.sessions.slice(0, 10);
+  const c5 = cutoffs()[4];
+  const hits = [];
+  last10.forEach(s => {
+    s.laps.forEach((l, i) => {
+      if (l.kind !== 'heat') return;
+      const pts = s.tr.filter(p => p[2] === i);
+      const first = pts.find(p => p[1] >= c5);
+      if (first) hits.push({ s, len: l.dur, at: first[0] - l.start });
+    });
+  });
+  const sessionsZ5 = new Set(hits.map(h => h.s.id)).size;
+  const minLen = hits.length ? Math.min(...hits.map(h => h.len)) : 0;
+  const avgAt = hits.length ? hits.reduce((a, h) => a + h.at, 0) / hits.length : 0;
+  const weeks = 8, perWeek = st.sessions.length / weeks;
+  const drops = [];
+  st.sessions.forEach(s => s.laps.forEach((l, i) => {
+    if (l.kind !== 'rest' || l.dur < 300) return;
+    const pts = s.tr.filter(p => p[2] === i);
+    const a = pts[0], b = pts.find(p => p[0] - l.start >= 180);
+    if (a && b) drops.push(a[1] - b[1]);
+  }));
+  const drop = drops.length ? Math.round(drops.reduce((a, b) => a + b, 0) / drops.length) : 0;
+  const heatW = st.sessions.reduce((a, s) => a + stats(s).heat, 0) / weeks / 60;
+  const coldW = st.sessions.reduce((a, s) => a + stats(s).cold, 0) / weeks / 60;
+  return [
+    { level: 'Your data', text: sessionsZ5
+      ? `Heart rate reached zone 5 (${c5} bpm or more) in ${sessionsZ5} of your last 10 sessions. Every time, it happened in a heat step of ${Math.round(minLen / 60)} minutes or longer, on average about ${Math.round(avgAt / 60)} minutes into the step.`
+      : `Heart rate stayed below zone 5 (${c5} bpm) in all of your last 10 sessions.`,
+      note: 'From your recorded sessions only.' },
+    { level: 'Your data', text: `In the first three minutes of rest, your heart rate fell by ${drop} bpm on average. Tracking this over months shows whether your rests are long enough to settle before the next round.`, note: 'From your recorded sessions only.' },
+    { level: 'Observational', text: `You averaged ${perWeek.toFixed(1)} sessions a week over the last eight weeks. In the Finnish KIHD cohort, men who used the sauna more often had lower cardiovascular mortality over about 20 years of follow-up. That is an association in one population, not proof that more sessions cause the benefit.`, cites: [0] },
+    { level: 'Small study', text: `Your weekly totals average ${Math.round(heatW)} min of heat and ${Math.round(coldW)} min of cold. A small study of winter swimmers is often quoted for about 57 min of heat and 11 min of cold a week. It described a handful of people; it did not test those amounts as targets.`, cites: [1] },
+  ];
+}
+const CITES = [
+  'Laukkanen T, Khan H, Zaccardi F, Laukkanen JA. Association between sauna bathing and fatal cardiovascular and all-cause mortality events. <i>JAMA Internal Medicine</i>, 2015.',
+  'Søberg S, et al. Altered brown fat thermoregulation and enhanced cold-induced thermogenesis in young, healthy, winter-swimming men. <i>Cell Reports Medicine</i>, 2021.',
+  'Hussain J, Cohen M. Clinical effects of regular dry sauna bathing: a systematic review. <i>Evidence-Based Complementary and Alternative Medicine</i>, 2018.',
+];
+const SUGGESTERS = [
+  () => {
+    const c5 = cutoffs()[4];
+    return { name: 'Classic, shorter third round', steps: [...rep(2, () => [H(12, 85), Cd(2, 6), Rs(12)]), H(9, 85), Cd(2, 6), Rs(15)],
+      rationale: `Your heart rate tends to reach zone 5 (${c5} bpm) late in long heat steps. This keeps your usual Classic Finnish, but shortens the third heat to 9 min and lengthens the last rest.` };
+  },
+  () => ({ name: 'Classic with longer rests', steps: rep(3, () => [H(12, 85), Cd(2, 6), Rs(16)]),
+    rationale: 'Your heart rate is still falling at the end of most 12-minute rests. Four extra minutes lets it settle before the next round.' }),
+  () => ({ name: 'Easy recovery week', steps: rep(2, () => [H(9, 78), Cd(1, 10), Rs(15)]),
+    rationale: 'You had more sessions than usual this week. A lighter session at a lower temperature keeps the habit without adding much heat load.' }),
+];
+function generateSuggestion() {
+  const f = SUGGESTERS[st.sugCount % SUGGESTERS.length];
+  st.sugCount++;
+  const s = f();
+  const p = { id: uid('s'), name: s.name, origin: 'suggested', rev: 1, steps: s.steps, rationale: s.rationale, copiedFrom: null, author: null, updatedAt: new Date() };
+  if (isBlocked(p)) return null;
+  st.programs.push(p);
+  return p;
+}
+function viewInsights() {
+  const ins = insights();
+  const sugs = st.programs.filter(p => p.origin === 'suggested');
+  const ai = st.settings.ai;
+  return `<div class="page">
+    <div class="phead"><div><h1>Insights</h1><p>What your sessions show, and what the research can and cannot say about it. Written by the AI from summaries of your data; the wording here is simulated.</p></div>
+      <div class="actions"><button class="btn primary" data-act="gen"${ai ? '' : ' disabled'}>Suggest a program</button></div></div>
+    ${ai ? '' : '<div class="notice warn"><span>AI processing is off. Turn it on under Settings, Data and privacy, to get insights and suggestions.</span></div>'}
+    <div class="grid2">
+      <div style="display:grid;gap:16px;align-content:start">
+        ${ins.map(x => `<section class="card insight"><p>${x.text}</p><div class="ev"><span class="lvl${x.level === 'Your data' ? ' data' : ''}">${x.level}</span>${x.note ? `<span>${x.note}</span>` : ''}${x.cites ? x.cites.map(i => `<span>[${i + 1}]</span>`).join('') : ''}</div></section>`).join('')}
+        <section class="card"><h2>Sources</h2><ol class="cites">${CITES.map(c => `<li>${c}</li>`).join('')}</ol>
+          <p class="hint">Much of the sauna and cold-exposure research is observational or based on small groups. Insights say which kind of evidence they rest on. They are not medical advice.</p></section>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <section class="card">
+          <h2>Suggested programs <span class="cap">${sugs.length}</span></h2>
+          ${sugs.length ? `<div class="sugs">${sugs.map(p => `<div class="card" style="box-shadow:none;border-style:dashed">
+            <strong>${esc(p.name)}</strong>${tlHtml(p.steps, true)}<span class="hint num">${rounds(p.steps)} rounds · ${fmt(total(p.steps))}</span>
+            <p class="hint">${esc(p.rationale)}</p>${validTag(p)}
+            <div class="actions"><button class="btn primary sm" data-act="accept" data-id="${p.id}">Accept</button><button class="btn sm" data-act="view-program" data-id="${p.id}">View steps</button><button class="btn sm ghost" data-act="dismiss" data-id="${p.id}">Dismiss</button></div>
+          </div>`).join('')}</div>` : '<p class="empty">No suggestions waiting. Use Suggest a program to generate one from your recent sessions.</p>'}
+          <p class="hint">Suggestions pass the same checks as any program. Accepting one moves it to Mine, where you can edit it and put it on the watch.</p>
+        </section>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- settings ----------
+function seg(name, opts, val, disabled) {
+  return `<div class="seg" role="radiogroup">${opts.map(([v, l, dis]) => `<input type="radio" name="${name}" id="${name}-${v}" value="${v}" data-set="${name}"${val === v ? ' checked' : ''}${dis || disabled ? ' disabled' : ''}><label for="${name}-${v}">${l}</label>`).join('')}</div>`;
+}
+function viewSettings() {
+  const s = st.settings, c = cutoffs();
+  return `<div class="page">
+    <div class="phead"><div><h1>Settings</h1><p>Account-wide settings. Settings that only affect the watch also live in the Garmin Connect app, under the sauna app's settings.</p></div></div>
+    <div class="sgrid">
+      <section class="card">
+        <h2>How you use the app</h2>
+        ${seg('mode', [['connected', 'Connected'], ['personal', 'Personal, phone only', true]], s.mode)}
+        <p class="hint"><strong>Connected</strong> keeps your history on this server and adds sync, sharing and AI. <strong>Personal</strong> keeps everything on your watch and phone with no account. It needs the native phone app, which comes later.</p>
+      </section>
+      <section class="card">
+        <h2>Watch</h2>
+        ${watchHead()}
+        <div class="field"><label for="pair-code">Pair another watch</label>
+          <div class="inline"><input class="inp num" id="pair-code" placeholder="6-character code" maxlength="6" style="max-width:170px"><button class="btn" data-act="pair">Pair</button></div>
+          <span class="hint">Open the sauna app on the watch with the phone nearby. It shows a code to enter here.</span></div>
+      </section>
+      <section class="card">
+        <h2>Heart rate zones</h2>
+        ${seg('zoneSource', [['watch', 'From the watch'], ['custom', 'Custom']], s.zoneSource)}
+        <div class="inline"><label for="max-hr">Max heart rate</label><input class="inp num" id="max-hr" type="number" min="120" max="220" value="${s.maxHr}" data-set="maxHr" style="width:90px"${s.zoneSource === 'watch' ? ' disabled' : ''}><span class="hint">bpm</span></div>
+        <table class="ztable">${[5, 4, 3, 2, 1].map(z => `<tr><td><i style="background:${ZCOL[z]}"></i> Zone ${z}</td><td class="r">${c[z - 1]}–${z < 5 ? c[z] - 1 : s.maxHr}</td><td class="r" style="color:var(--muted)">${50 + (z - 1) * 10}–${50 + z * 10}%</td></tr>`).join('')}</table>
+        <p class="hint">${s.zoneSource === 'watch' ? 'Taken from your Garmin zones, so changes made in Garmin Connect apply here and on the watch.' : 'Custom zones override your Garmin zones in this app only.'}</p>
+      </section>
+      <section class="card">
+        <h2>Heart rate warning</h2>
+        ${seg('warnAt', [['off', 'Off'], ['z5', 'Zone 5 floor'], ['max', 'Max HR'], ['custom', 'Custom']], s.warnAt)}
+        <div class="inline"><label for="warn-bpm">Custom level</label><input class="inp num" id="warn-bpm" type="number" min="100" max="220" value="${s.warnBpm}" data-set="warnBpm" style="width:90px"${s.warnAt === 'custom' ? '' : ' disabled'}><span class="hint">bpm</span></div>
+        <p class="hint">${warnLevel() ? `The watch vibrates and flashes from ${warnLevel()} bpm and stops below ${warnLevel() - 2}. Session history uses the same level.` : 'No warning on the watch.'}</p>
+      </section>
+      <section class="card">
+        <h2>Saved saunas</h2>
+        <ul class="vlist">${SAUNAS.map(x => `<li style="justify-content:space-between"><span>${esc(x.name)}</span><span class="hint num">${x.temp}°C · ${x.type}</span></li>`).join('')}</ul>
+        <p class="hint">Picked on the watch before a Tracker session, so heat steps get a stated temperature instead of an estimate.</p>
+      </section>
+      <section class="card">
+        <h2>Summary on the watch</h2>
+        ${seg('zoneStrip', [['perZone', 'Time per zone'], ['timeline', 'Timeline'], ['both', 'Both']], s.zoneStrip)}
+        <p class="hint">Which zone strip the watch shows on the saved summary.</p>
+      </section>
+      <section class="card">
+        <h2>Data and privacy</h2>
+        <label class="toggle"><input type="checkbox" checked disabled><span>Store my sessions on this server. <span class="hint" style="display:block">Needed for history and sync. Heart rate is health data.</span></span></label>
+        <label class="toggle"><input type="checkbox" data-set="ai"${s.ai ? ' checked' : ''}><span>Use AI for insights and suggestions. <span class="hint" style="display:block">Sends summaries of your sessions, never names or raw traces, to the AI provider.</span></span></label>
+        <div class="actions"><button class="btn" data-act="export">Export my data</button><button class="btn danger" data-act="delete-account">Delete account</button></div>
+      </section>
+    </div>
+  </div>`;
+}
+
+// ---------- render ----------
+const main = document.getElementById('main');
+function render() {
+  renderNav();
+  const V = { overview: viewOverview, sessions: viewSessions, programs: viewPrograms, insights: viewInsights, settings: viewSettings };
+  main.innerHTML = V[st.view]();
+  mountCharts();
+}
+let toastT = 0;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
+}
+function go(view) {
+  if (st.view !== view) { st.open = false; st.editing = null; st.importOpen = false; }
+  st.view = view;
+  render();
+  window.scrollTo(0, 0);
+}
+
+// ---------- events ----------
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-nav]');
+  if (nav) { e.preventDefault(); history.replaceState(null, '', '#' + nav.dataset.nav); go(nav.dataset.nav); return; }
+  if (e.target.closest('.wcheck')) return; // checkbox handled on change
+  const a = e.target.closest('[data-act]');
+  if (!a || a.disabled) return;
+  const id = a.dataset.id, i = a.dataset.i != null ? +a.dataset.i : null;
+  const P = () => st.programs.find(p => p.id === id);
+  switch (a.dataset.act) {
+    case 'sel-session': st.sel.sessions = id; st.open = true; st.ambEdit = null; render(); scrollDetail(); break;
+    case 'open-session': st.view = 'sessions'; st.sel.sessions = id; st.open = true; history.replaceState(null, '', '#sessions'); render(); break;
+    case 'sel-program': if (st.editing) { toast('Save or cancel the edit first.'); return; } st.sel.programs = id; st.open = true; st.shareFor = null; st.confirmDel = null; render(); scrollDetail(); break;
+    case 'view-program': st.view = 'programs'; st.filter = 'suggested'; st.sel.programs = id; st.open = true; st.editing = null; history.replaceState(null, '', '#programs'); render(); break;
+    case 'back': st.open = false; st.editing = null; render(); break;
+    case 'filter': st.filter = a.dataset.f; if (!st.editing) { st.open = false; } render(); break;
+    case 'w-up': case 'w-down': {
+      const k = st.watch.indexOf(id), j = k + (a.dataset.act === 'w-up' ? -1 : 1);
+      if (j < 0 || j >= st.watch.length) return;
+      [st.watch[k], st.watch[j]] = [st.watch[j], st.watch[k]]; render(); break;
+    }
+    case 'w-remove': st.watch = st.watch.filter(x => x !== id); toast('Removed from the watch.'); render(); break;
+    case 'sim-sync': st.synced = st.watch.slice(); st.lastSync = new Date(); toast(`The watch fetched ${st.watch.length} programs.`); render(); break;
+    case 'new-program': startEdit(null, 'new'); st.sel.programs = null; render(); scrollDetail(); break;
+    case 'edit': startEdit(P(), 'edit'); render(); scrollDetail(); break;
+    case 'clone': startEdit(P(), 'clone'); render(); scrollDetail(); break;
+    case 'del': st.confirmDel = id; render(); break;
+    case 'del-no': st.confirmDel = null; render(); break;
+    case 'del-yes': {
+      const p = P(); st.programs = st.programs.filter(x => x.id !== id); st.watch = st.watch.filter(x => x !== id);
+      st.sel.programs = null; st.confirmDel = null; st.open = false; toast(`Deleted "${p.name}".`); render(); break;
+    }
+    case 'share': st.shareFor = st.shareFor === id ? null : id; render(); break;
+    case 'copy-code': {
+      const code = document.getElementById('share-code').textContent;
+      const sel = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('share-code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+      try { navigator.clipboard.writeText(code).then(() => toast('Share code copied.'), () => { sel(); toast('Selected. Copy it with your keyboard.'); }); } catch (_) { sel(); toast('Selected. Copy it with your keyboard.'); }
+      break;
+    }
+    case 'accept': {
+      const p = P(); p.origin = 'mine'; p.rev = 1; p.suggestedNote = p.rationale; p.updatedAt = new Date();
+      toast(`"${p.name}" moved to Mine. You can now put it on the watch.`);
+      if (st.view === 'programs') { st.filter = 'mine'; st.sel.programs = p.id; }
+      render(); break;
+    }
+    case 'dismiss': st.programs = st.programs.filter(x => x.id !== id); if (st.sel.programs === id) { st.sel.programs = null; st.open = false; } toast('Suggestion dismissed.'); render(); break;
+    case 'gen': { const p = generateSuggestion(); toast(p ? `New suggestion: ${p.name}.` : 'The suggestion failed the checks and was discarded.'); render(); break; }
+    case 'import-open': st.importOpen = true; render(); setTimeout(() => { const el = document.getElementById('import-code'); if (el) el.focus(); }, 0); break;
+    case 'import-close': st.importOpen = false; render(); break;
+    case 'import-do': {
+      const code = (document.getElementById('import-code').value || '').trim().toUpperCase();
+      if (!/^SAUNA-[0-9A-Z]{6}$/.test(code)) { toast('That is not a share code. Codes look like SAUNA-7Q2K9D.'); return; }
+      const p = { id: uid('m'), name: 'Friday contrast', origin: 'mine', rev: 1, steps: rep(4, () => [H(8, 88), Cd(1.5, 7), Rs(6)]), importedFrom: 'sauna_marta', author: null, copiedFrom: null, updatedAt: new Date() };
+      st.programs.push(p); st.importOpen = false; st.filter = 'mine'; st.sel.programs = p.id; st.open = true;
+      toast(`Imported "${p.name}" to Mine.`); render(); break;
+    }
+    case 'b-add': st.editing.draft.steps.push(newStep(a.dataset.k)); render(); break;
+    case 'b-repeat': {
+      const s = st.editing.draft.steps; let k = s.length - 1;
+      while (k >= 0 && s[k].kind !== 'heat') k--;
+      if (k < 0) return;
+      s.push(...s.slice(k).map(x => ({ ...x }))); render(); break;
+    }
+    case 'b-up': case 'b-down': {
+      const s = st.editing.draft.steps, j = i + (a.dataset.act === 'b-up' ? -1 : 1);
+      [s[i], s[j]] = [s[j], s[i]]; render(); break;
+    }
+    case 'b-dup': st.editing.draft.steps.splice(i + 1, 0, { ...st.editing.draft.steps[i] }); render(); break;
+    case 'b-del': st.editing.draft.steps.splice(i, 1); render(); break;
+    case 'b-cancel': st.editing = null; if (!st.sel.programs) st.open = false; render(); break;
+    case 'b-save': saveEdit(); render(); break;
+    case 'amb-edit': st.ambEdit = { s: id, i }; render(); setTimeout(() => { const el = document.getElementById('amb-in'); if (el) el.focus(); }, 0); break;
+    case 'amb-cancel': st.ambEdit = null; render(); break;
+    case 'amb-save': {
+      const v = Math.round(+document.getElementById('amb-in').value);
+      if (!Number.isFinite(v) || v < -5 || v > 130) { toast('Enter a temperature between -5 and 130 °C.'); return; }
+      const l = st.sessions.find(s => s.id === id).laps[i]; l.amb = { v, src: 'stated' };
+      st.ambEdit = null; toast('Temperature corrected. Values derived from it are recomputed.'); render(); break;
+    }
+    case 'pair': {
+      const v = (document.getElementById('pair-code').value || '').trim();
+      if (!/^[0-9A-Za-z]{6}$/.test(v)) { toast('Enter the 6-character code shown on the watch.'); return; }
+      toast('In the real app this links the watch to your account.'); break;
+    }
+    case 'export': toast('In the real app this prepares a JSON and FIT download.'); break;
+    case 'delete-account': toast('In the real app this asks for confirmation, then deletes everything.'); break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.row[data-act]')) { e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.matches('[data-act="w-toggle"]')) {
+    const id = t.dataset.id;
+    if (t.checked) {
+      if (st.watch.length >= WATCH_CAP) { t.checked = false; toast(`The watch holds ${WATCH_CAP} programs. Remove one first.`); return; }
+      st.watch.push(id); toast('Added to the watch.');
+    } else { st.watch = st.watch.filter(x => x !== id); toast('Removed from the watch.'); }
+    render(); return;
+  }
+  if (t.dataset.set) {
+    const k = t.dataset.set, s = st.settings;
+    if (k === 'ai') s.ai = t.checked;
+    else if (k === 'maxHr') { const v = Math.round(+t.value); s.maxHr = Number.isFinite(v) ? Math.min(220, Math.max(120, v)) : 175; }
+    else if (k === 'warnBpm') { const v = Math.round(+t.value); s.warnBpm = Number.isFinite(v) ? Math.min(220, Math.max(100, v)) : 165; }
+    else s[k] = t.value;
+    if (k === 'zoneSource' && t.value === 'watch') s.maxHr = 175;
+    render(); return;
+  }
+  if (t.dataset.bind && st.editing) {
+    const p = st.editing.draft, i = +t.dataset.i, b = t.dataset.bind;
+    if (b === 'kind') {
+      const old = p.steps[i]; const n = newStep(t.value); n.dur = old.dur; p.steps[i] = n; render(); return;
+    }
+    if (b === 'type') { p.steps[i].type = t.value; if (/^(Sauna|Steam|Infrared)$/.test(p.steps[i].label)) p.steps[i].label = t.value === 'Steam' ? 'Steam' : t.value === 'Infrared' ? 'Infrared' : 'Sauna'; render(); return; }
+    if (b === 'dur') { const v = parseMmss(t.value); if (v != null) t.value = mmss(v); }
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (!t.dataset.bind || !st.editing) return;
+  const p = st.editing.draft, b = t.dataset.bind, i = +t.dataset.i;
+  if (b === 'name') p.name = t.value;
+  else if (b === 'label') p.steps[i].label = t.value;
+  else if (b === 'dur') { const v = parseMmss(t.value); t.classList.toggle('bad', v == null); if (v != null) p.steps[i].dur = v; }
+  else if (b === 'temp') { const v = t.value === '' ? null : +t.value; p.steps[i].temp = Number.isFinite(v) ? v : null; }
+  refreshBuilderParts();
+});
+function scrollDetail() {
+  if (window.matchMedia('(max-width: 859px)').matches) window.scrollTo(0, 0);
+}
+let rT = 0;
+window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(mountCharts, 120); });
+window.addEventListener('hashchange', () => {
+  const h = location.hash.slice(1);
+  if (NAV.some(n => n[0] === h) && h !== st.view) go(h);
+});
+
+// ---------- boot ----------
+st.sessions = makeSessions();
+st.sessions.sort((a, b) => b.date - a.date);
+st.sel.sessions = st.sessions[0].id;
+generateSuggestion();
+const h0 = location.hash.slice(1);
+if (NAV.some(n => n[0] === h0)) st.view = h0;
+const boot = () => render();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(boot, boot); else boot();
+render();
+})();
+</script>

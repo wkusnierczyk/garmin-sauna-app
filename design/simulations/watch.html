@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>Sauna Watch Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Ubuntu+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: instrument bench, same family as the Wrist Asteroids simulator. Device and button legend on the left, simulation knobs, programs and telemetry in a side rail; stacks on phones. */
+:root {
+  --bg: #e9e7e5;
+  --panel: #f6f5f4;
+  --ink: #1f1b19;
+  --muted: #645d58;
+  --line: #d5d0cc;
+  --accent: #a9481b;
+  --accent-ink: #ffffff;
+  --heat: #c4561e;
+  --cold: #1f80bd;
+  --rest: #858e96;
+  --bezel-a: #4a4643;
+  --bezel-b: #171514;
+  --btn: #5a5653;
+  --btn-hi: #a19c98;
+  --press: #f08a4b;
+  --font-ui: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11100f; --panel: #1a1817; --ink: #ece7e3; --muted: #9b928c; --line: #2e2a28;
+    --accent: #f08a4b; --accent-ink: #1a0c04; --heat: #f08a4b; --cold: #5cc4ff; --rest: #a3abb2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11100f; --panel: #1a1817; --ink: #ece7e3; --muted: #9b928c; --line: #2e2a28;
+  --accent: #f08a4b; --accent-ink: #1a0c04; --heat: #f08a4b; --cold: #5cc4ff; --rest: #a3abb2;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.45; }
+.page { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 36px; display: grid; gap: 18px; }
+
+header { display: grid; gap: 4px; }
+header h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: 0.01em; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 72ch; }
+kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--panel); color: var(--ink); white-space: nowrap; }
+
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+@media (max-width: 880px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding-inline: 16px; padding-block: 34px 18px; display: grid; justify-items: center; gap: 22px; }
+.device { position: relative; padding-inline: 118px; }
+@media (max-width: 640px) { .device { padding-inline: 0; } .blabel { display: none; } }
+
+.watch {
+  --size: min(330px, 72vw);
+  position: relative; width: var(--size); height: var(--size); border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, var(--bezel-a), var(--bezel-b) 72%);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+}
+.watch::after {
+  content: ""; position: absolute; inset: 3.5%; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.18) 0 0.6deg, transparent 0.6deg 6deg);
+  -webkit-mask: radial-gradient(circle, transparent 66%, #000 67%, #000 70%, transparent 71%);
+          mask: radial-gradient(circle, transparent 66%, #000 67%, #000 70%, transparent 71%);
+  pointer-events: none;
+}
+.screen { position: absolute; inset: 9%; border-radius: 50%; overflow: hidden; background: #000; box-shadow: 0 0 0 3px #050607, 0 0 0 5px #2c3237; }
+.screen canvas { display: block; width: 100%; height: 100%; }
+
+.hw {
+  position: absolute; left: 50%; top: 50%; width: 58px; height: 36px; margin: -18px 0 0 -29px;
+  border: 0; padding: 0; background: transparent; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent;
+  transform: rotate(var(--a)) translateY(calc(var(--size) / -2 - 5px));
+}
+.hw::before {
+  content: ""; position: absolute; left: 9px; right: 9px; top: 12px; height: 12px; border-radius: 4px;
+  background: linear-gradient(var(--btn-hi), var(--btn)); box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  transition: transform 60ms, background 60ms;
+}
+.hw.down::before { background: var(--press); transform: translateY(4px); }
+.hw[data-btn="LIGHT"]::before { background: linear-gradient(#85807c, #4d4946); }
+.hw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+.blabel { position: absolute; width: 104px; font-size: 13px; line-height: 1.2; color: var(--muted); transform: translateY(-50%); pointer-events: none; }
+.blabel b { display: block; font-weight: 600; color: var(--ink); }
+.blabel.l { text-align: right; }
+.blabel.on b { color: var(--accent); }
+
+@keyframes buzz-s { 0%,100% { transform: translate(0,0) } 25% { transform: translate(2px,-1px) } 50% { transform: translate(-2px,1px) } 75% { transform: translate(1px,1px) } }
+.watch.buzz { animation: buzz-s 90ms linear 3; }
+@media (prefers-reduced-motion: reduce) {
+  .watch.buzz { animation: none; box-shadow: 0 0 0 3px var(--accent), 0 14px 34px rgba(0,0,0,0.32); }
+}
+
+.legend { width: 100%; max-width: 460px; border-collapse: collapse; font-size: 14px; }
+.legend th { text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0 8px 6px 0; border-bottom: 1px solid var(--line); }
+.legend td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.legend td:nth-child(2) { width: 110px; white-space: nowrap; }
+.legend kbd + kbd { margin-left: 4px; }
+.legend tr:last-child td { border-bottom: 0; }
+.legend .sys { color: var(--muted); }
+.keyhint { width: 100%; max-width: 460px; }
+
+.rail { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding-inline: 16px; padding-block: 14px 16px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.field { display: grid; gap: 5px; }
+.field > span { font-size: 14px; font-weight: 500; }
+.seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { flex: 1 1 auto; text-align: center; padding: 5px 9px; font-size: 13.5px; cursor: pointer; border-left: 1px solid var(--line); user-select: none; white-space: nowrap; }
+.seg label:first-of-type { border-left: 0; }
+.seg input:checked + label { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -3px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.tool { justify-self: start; font: inherit; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.tool:hover:not(:disabled) { border-color: var(--accent); }
+.tool:disabled { opacity: 0.45; cursor: not-allowed; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.tool:active { transform: translateY(1px); }
+.tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.progs { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.progs li { display: grid; gap: 4px; min-width: 0; }
+.progs .ph { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.progs .pn { font-weight: 600; font-size: 15px; }
+.progs .pm { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.progs .pd { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.pbar { display: flex; gap: 2px; height: 8px; border-radius: 3px; overflow: hidden; }
+.pbar i { display: block; min-width: 2px; }
+.k-heat { background: var(--heat); } .k-cold { background: var(--cold); } .k-rest { background: var(--rest); opacity: 0.55; }
+.keyrow { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--muted); }
+.keyrow span { display: inline-flex; align-items: center; gap: 5px; }
+.keyrow i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.inline { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.inline input { font: inherit; font-family: var(--font-mono); font-size: 14px; width: 5.5em; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.inline input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.zones { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.zones td { padding: 4px 6px 4px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.zones tr:last-child td { border-bottom: 0; }
+.zones td:nth-child(3), .zones td:nth-child(4) { font-family: var(--font-mono); font-size: 12.5px; text-align: right; }
+.zones .sw { width: 14px; }
+.zones .sw i { display: block; width: 12px; height: 12px; border-radius: 3px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 0; }
+.stats div { min-width: 0; }
+.stats dt { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stats dd { margin: 0; font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.log { list-style: none; margin: 0; padding: 0; font-family: var(--font-mono); font-size: 12px; display: grid; gap: 3px; min-height: 12em; overflow-x: auto; }
+.log li { display: grid; grid-template-columns: 4.3em 7.6em 6.6em minmax(0, 1fr); gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.log .t { color: var(--muted); }
+.log .ev { color: var(--accent); }
+.log .n { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Sauna Watch Simulator</h1>
+    <p>A browser model of the Connect IQ sauna app on a 5-button round watch. It starts on the watch face. Press START to open the activity list, scroll to Sauna, then pick Tracker or Program. Keys: <kbd>↑</kbd> <kbd>↓</kbd> for UP and DOWN, <kbd>Enter</kbd> for START, <kbd>Esc</kbd> for BACK. <kbd>Q</kbd> <kbd>W</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>L</kbd> press the physical buttons directly, as in the Asteroids simulator. Holding UP for one second sends <code>onMenu</code>.</p>
+  </header>
+
+  <div class="bench">
+    <section class="stage" aria-label="Simulated watch">
+      <div class="device" id="device">
+        <div class="watch" id="watch">
+          <div class="screen"><canvas id="cv" width="454" height="454" aria-label="Watch screen"></canvas></div>
+        </div>
+      </div>
+      <table class="legend" id="legend" aria-label="Button actions on the current screen">
+        <thead><tr><th>Button</th><th>Key</th><th id="legend-now">Now</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint keyhint">Actions fire on <code>onKey</code>, after release, as in the Asteroids model. UP waits for release so a long press can become <code>onMenu</code> without also scrolling.</p>
+    </section>
+
+    <aside class="rail">
+      <section class="card" aria-labelledby="h-sim">
+        <h2 id="h-sim">Simulation</h2>
+        <div class="field">
+          <span id="lbl-speed">Session clock</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lbl-speed">
+            <input type="radio" name="speed" id="speed-1" value="1"><label for="speed-1">Real time</label>
+            <input type="radio" name="speed" id="speed-10" value="10"><label for="speed-10">10×</label>
+            <input type="radio" name="speed" id="speed-60" value="60"><label for="speed-60">60×</label>
+          </div>
+          <div class="btnrow">
+            <button type="button" class="tool" id="ff-next">Skip to next phase</button>
+            <button type="button" class="tool" id="ff-end">Skip to end</button>
+          </div>
+          <p class="hint" id="ff-hint">Start a session to skip ahead.</p>
+        </div>
+        <div class="field">
+          <span id="lbl-wear">Watch</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lbl-wear">
+            <input type="radio" name="wear" id="wear-wrist" value="wrist"><label for="wear-wrist">On wrist</label>
+            <input type="radio" name="wear" id="wear-strap" value="strap"><label for="wear-strap">Off wrist, chest strap</label>
+          </div>
+          <p class="hint">Off wrist, the strap's ANT+ signal drops while you are under water, so the cold phase shows no heart rate.</p>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-zones">
+        <h2 id="h-zones">Heart rate zones</h2>
+        <label class="inline" for="max-hr">Max heart rate <input type="number" id="max-hr" min="120" max="220" step="1"> bpm</label>
+        <table class="zones" id="zones" aria-label="Zone cutoffs"></table>
+        <p class="hint">Cutoffs follow Garmin's default method, a percentage of max heart rate. On the watch the app would read the user's own zones with <code>UserProfile.getHeartRateZones()</code>, so changes made in Garmin Connect carry over. Sauna-specific cutoffs can override them later.</p>
+        <div class="field">
+          <span id="lbl-resp">Heat response (simulated person)</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lbl-resp">
+            <input type="radio" name="response" id="resp-mild" value="mild"><label for="resp-mild">Mild</label>
+            <input type="radio" name="response" id="resp-typical" value="typical"><label for="resp-typical">Typical</label>
+            <input type="radio" name="response" id="resp-strong" value="strong"><label for="resp-strong">Strong</label>
+          </div>
+        </div>
+        <div class="field">
+          <span id="lbl-zbar">Zone strip on the saved summary</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lbl-zbar">
+            <input type="radio" name="zoneBar" id="zbar-cumulative" value="cumulative"><label for="zbar-cumulative">Time per zone</label>
+            <input type="radio" name="zoneBar" id="zbar-timeline" value="timeline"><label for="zbar-timeline">Timeline</label>
+            <input type="radio" name="zoneBar" id="zbar-both" value="both"><label for="zbar-both">Both</label>
+          </div>
+          <p class="hint">Time per zone sorts the session by zone, like a histogram laid end to end. Timeline keeps the order, start to end, with a notch at each phase change. Both stacks the timeline above the time per zone.</p>
+        </div>
+        <div class="field">
+          <span id="lbl-warn">Warn (vibrate and flash) at</span>
+          <div class="seg" role="radiogroup" aria-labelledby="lbl-warn">
+            <input type="radio" name="warnAt" id="warn-off" value="off"><label for="warn-off">Off</label>
+            <input type="radio" name="warnAt" id="warn-z5" value="z5"><label for="warn-z5">Zone 5 floor</label>
+            <input type="radio" name="warnAt" id="warn-max" value="max"><label for="warn-max">Max HR</label>
+            <input type="radio" name="warnAt" id="warn-custom" value="custom"><label for="warn-custom">Custom</label>
+          </div>
+          <label class="inline" for="warn-bpm">Custom level <input type="number" id="warn-bpm" min="100" max="220" step="1"> bpm</label>
+          <p class="hint" id="warn-hint"></p>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-progs">
+        <h2 id="h-progs">Programs on the watch</h2>
+        <p class="hint">Example programs, generated at random. In the real app they are authored in the companion app and synced to the watch.</p>
+        <ul class="progs" id="progs"></ul>
+        <div class="keyrow"><span><i class="k-heat"></i>Heat</span><span><i class="k-cold"></i>Cold</span><span><i class="k-rest"></i>Rest</span></div>
+        <button type="button" class="tool" id="regen">Generate new programs</button>
+      </section>
+
+      <section class="card" aria-labelledby="h-tel">
+        <h2 id="h-tel">Session</h2>
+        <dl class="stats">
+          <div><dt>Screen</dt><dd id="t-screen">–</dd></div>
+          <div><dt>Mode</dt><dd id="t-mode">–</dd></div>
+          <div><dt>Phase</dt><dd id="t-phase">–</dd></div>
+          <div><dt>Phase time</dt><dd id="t-step">–</dd></div>
+          <div><dt>Session time</dt><dd id="t-total">–</dd></div>
+          <div><dt>Heart rate</dt><dd id="t-hr">–</dd></div>
+        </dl>
+        <p class="hint">Heart rate is a simple model: it climbs in the heat, spikes on cold shock, then settles while resting. The sensor samples it once a second with noise. The watch shows a smoothed value that changes only when it has moved by about one beat, and drops a zone only 2 bpm below the cutoff.</p>
+      </section>
+
+      <section class="card" aria-labelledby="h-log">
+        <h2 id="h-log">Firmware events</h2>
+        <ol class="log" id="log"></ol>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- constants ----------
+const W = 454, C = 227;
+const FONT = '"Barlow Semi Condensed", "Arial Narrow", sans-serif';
+const MONO = '"Ubuntu Mono", "JetBrains Mono", ui-monospace, Menlo, monospace';
+const K = { fg: '#F3F5F7', dim: '#8E98A2', dim2: '#535c65', sel: '#1c2126', track: '#161b1f', heat: '#FF8A3D', cold: '#56C2FF', rest: '#A9B3BC', ok: '#5ED38A', bad: '#FF6B5E' };
+const KIND_COLOR = { heat: K.heat, cold: K.cold, rest: K.rest };
+const PHASE_LABEL = { heat: 'Sauna', cold: 'Cold', rest: 'Rest' };
+const NEXT_PHASE = { heat: 'cold', cold: 'rest', rest: 'heat' };
+const MENU_HOLD_MS = 1000;
+// Garmin's zone colours: 1 grey, 2 blue, 3 green, 4 orange, 5 red. Index 0 is below zone 1.
+const ZONE_RING = ['#5d666e', '#A3ADB6', '#3FA9F5', '#5ED38A', '#FF9F2E', '#FF4D4D'];
+const ZONE_TEXT = ['#F3F5F7', '#A3ADB6', '#3FA9F5', '#5ED38A', '#FF9F2E', '#FF4D4D'];
+const ZONE_PCT = [0.5, 0.6, 0.7, 0.8, 0.9];
+// Heat response: plateau as a fraction of the reserve (max HR − rest) and how fast HR climbs.
+// Strong overshoots max HR, so it crosses the zone 5 floor in about 8 minutes and the ceiling in about 13.
+const RESPONSE = { mild: { gain: 0.52, tau: 480 }, typical: { gain: 0.65, tau: 420 }, strong: { gain: 1.08, tau: 300 } };
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Tracker phases have no planned length; one ring turn is this long until the phase runs over, then the ring rescales.
+const REF_LEN = { heat: 15 * 60, cold: 3 * 60, rest: 15 * 60 };
+const START_ANGLE = 55;
+
+const KEYCODE = { LIGHT: 'KEY_LIGHT', UP: 'KEY_UP', DOWN: 'KEY_DOWN', START: 'KEY_ENTER', BACK: 'KEY_ESC' };
+const BTN_ANGLE = { LIGHT: 305, UP: 262, DOWN: 222, START: 55, BACK: 125 };
+const BTN_KEYS = { LIGHT: ['Q'], UP: ['↑', 'W'], DOWN: ['↓', 'S'], START: ['Enter', 'O'], BACK: ['Esc', 'L'] };
+const KEYMAP = { q: 'LIGHT', w: 'UP', s: 'DOWN', o: 'START', l: 'BACK', arrowup: 'UP', arrowdown: 'DOWN', enter: 'START', escape: 'BACK', backspace: 'BACK' };
+
+// ---------- settings ----------
+const STORE = 'sauna-watch-sim-v1';
+const cfg = { speed: '10', wear: 'wrist', seed: (Math.random() * 1e9) | 0, maxHr: 175, response: 'typical', warnAt: 'z5', warnBpm: 165, zoneBar: 'cumulative' };
+try { Object.assign(cfg, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (_) {}
+function saveCfg() { try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (_) {} }
+function cutoffs() { return ZONE_PCT.map(p => Math.round(p * cfg.maxHr)); }
+function zoneOf(h) { const c = cutoffs(); let z = 0; for (let i = 0; i < 5; i++) if (h >= c[i]) z = i + 1; return z; }
+function warnLevel() {
+  if (cfg.warnAt === 'z5') return cutoffs()[4];
+  if (cfg.warnAt === 'max') return cfg.maxHr;
+  if (cfg.warnAt === 'custom') return cfg.warnBpm;
+  return null;
+}
+
+// ---------- program generator ----------
+function mulberry(a) {
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function genPrograms(seed) {
+  const r = mulberry(seed);
+  const ri = (a, b) => a + Math.floor(r() * (b - a + 1));
+  const pick = a => a[Math.floor(r() * a.length)];
+  const step = kind => (label, min, detail) => ({ kind, label, dur: Math.round(min * 60), detail });
+  const heat = step('heat'), cold = step('cold');
+  const rest = (min, detail = 'Room air') => ({ kind: 'rest', label: 'Rest', dur: Math.round(min * 60), detail });
+  const T = [
+    () => { const s = ri(10, 15), t = ri(80, 90), c = ri(2, 6) / 2, w = ri(4, 10), z = ri(10, 15);
+      return { name: pick(['Classic Finnish', 'Evening rounds', 'Three by Finnish']), rounds: ri(3, 4), round: () => [heat('Sauna', s, `${t}°C · Finnish`), cold('Plunge', c, `${w}°C water`), rest(z)] }; },
+    () => { const s = ri(6, 8), t = ri(85, 95), c = ri(2, 4) / 2, w = ri(3, 8);
+      return { name: pick(['Contrast sprint', 'Quick contrast', 'Hot-cold ladder']), rounds: ri(4, 6), round: () => [heat('Sauna', s, `${t}°C · Finnish`), cold('Plunge', c, `${w}°C water`), rest(1, 'Transition')] }; },
+    () => { const s = ri(8, 10), t = ri(70, 75), c = ri(1, 2) / 2, w = ri(14, 18), z = ri(12, 15);
+      return { name: pick(['Gentle start', 'First timer', 'Easy evening']), rounds: 2, round: () => [heat('Sauna', s, `${t}°C · Finnish`), cold('Cold shower', c, `${w}°C water`), rest(z)] }; },
+    () => { const b = ri(7, 9), inc = ri(3, 4), t = ri(84, 90), c = ri(4, 6) / 2, w = ri(4, 8), z = ri(10, 12);
+      return { name: pick(['Heat ladder', 'Löyly build', 'Rising rounds']), rounds: 3, round: i => [heat('Sauna', b + i * inc, `${t + i * 3}°C · löyly`), cold('Plunge', c, `${w}°C water`), rest(z)] }; },
+    () => { const s = ri(20, 25), t = ri(50, 60), z = ri(8, 12);
+      return { name: pick(['Infrared unwind', 'Slow infrared']), rounds: 2, round: () => [heat('Infrared', s, `${t}°C · infrared`), cold('Cold shower', 1, '18°C water'), rest(z)] }; },
+    () => { const s = ri(10, 15), c = ri(2, 4) / 2, w = ri(8, 12), z = ri(8, 10);
+      return { name: pick(['Steam and plunge', 'Hammam rounds']), rounds: 3, round: () => [heat('Steam', s, '46°C · 100% RH'), cold('Plunge', c, `${w}°C water`), rest(z)] }; },
+  ];
+  const order = [...T.keys()];
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  return order.slice(0, ri(3, 5)).map(k => {
+    const p = T[k]();
+    const steps = [];
+    for (let i = 0; i < p.rounds; i++) for (const s of p.round(i)) steps.push(Object.assign(s, { round: i + 1 }));
+    if (steps[steps.length - 1].detail === 'Transition') steps.pop();
+    return { name: p.name, rounds: p.rounds, steps, total: steps.reduce((a, s) => a + s.dur, 0) };
+  });
+}
+let programs = genPrograms(cfg.seed);
+
+// ---------- formatting ----------
+const pad = n => String(n).padStart(2, '0');
+function fmt(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+function fmtShort(sec) { return sec % 60 ? `${Math.floor(sec / 60)}:${pad(sec % 60)}` : `${sec / 60}′`; }
+function fmtMin(sec) { return `${Math.round(sec / 60)} min`; }
+
+// ---------- state ----------
+const S = {
+  screen: 'face',
+  sel: { acts: 0, sauna: 0, progs: 0, pause: 0, confirm: 0 },
+  prog: null, stepScroll: 0, page: 0,
+  session: null, summary: null,
+  toast: null, banner: null,
+};
+const REST_HR = 62;
+let hr = 64;            // model heart rate (the body)
+// Display pipeline, as it would run on the watch:
+// 1 Hz sensor samples with noise → exponential smoothing (HR_TAU s) → integer that only moves
+// when the smoothed value is HR_STEP away → zone with HR_HYST bpm of hysteresis on the way down.
+const HR_TAU = 6, HR_STEP = 0.8, HR_HYST = 2;
+let hrRaw = 64, hrSmooth = 64, hrShown = 64, hrZone = 0, sensorAcc = 0;
+// The warning reacts to a faster estimate (2 s) than the display (6 s), so it isn't delayed by the smoothing.
+let hrFast = 64;
+function zoneHyst(h, prev) {
+  const c = cutoffs();
+  let z = zoneOf(h);
+  if (prev > 0 && z < prev && h >= c[prev - 1] - HR_HYST) z = prev;
+  return z;
+}
+function sensorTick(h) {
+  sensorAcc += h;
+  while (sensorAcc >= 1) {
+    sensorAcc -= 1;
+    hrRaw = hr + (Math.random() + Math.random() + Math.random() - 1.5) * 2.2;
+    hrSmooth += (hrRaw - hrSmooth) * (1 - Math.exp(-1 / HR_TAU));
+    hrFast += (hrRaw - hrFast) * (1 - Math.exp(-1 / 2));
+    if (Math.abs(hrSmooth - hrShown) >= HR_STEP) hrShown = Math.round(hrSmooth);
+    hrZone = zoneHyst(hrShown, hrZone);
+  }
+}
+
+const ACTS = [
+  { label: 'Run', icon: 'run', color: '#3FA9F5' },
+  { label: 'Bike', icon: 'bike', color: '#3FA9F5' },
+  { label: 'Hike', icon: 'hike', color: '#5ED38A' },
+  { label: 'Sauna', icon: 'heat', color: K.heat, app: true },
+  { label: 'Strength', icon: 'strength', color: '#B38CFF' },
+  { label: 'Pool Swim', icon: 'swim', color: '#3FA9F5' },
+  { label: 'Breathwork', icon: 'breath', color: '#5ED38A' },
+];
+
+const LISTS = {
+  acts: { key: 'acts', items: () => ACTS },
+  sauna: { key: 'sauna', items: () => [
+    { label: 'Tracker', sub: 'Log phases as you go', icon: 'tracker', color: K.heat },
+    { label: 'Program', sub: `${programs.length} programs`, icon: 'program', color: K.heat },
+  ] },
+  progs: { key: 'progs', items: () => programs.map(p => ({ label: p.name, sub: `${p.rounds} rounds · ${fmtMin(p.total)}`, icon: 'program', color: K.heat })) },
+  pause: { key: 'pause', items: () => (S.session && S.session.complete ? [] : [{ label: 'Resume', icon: 'resume', color: K.ok }])
+    .concat([{ label: 'Save', icon: 'save', color: K.ok }, { label: 'Discard', icon: 'discard', color: K.bad }]) },
+  confirm: { key: 'confirm', items: () => [{ label: 'No', icon: 'back', color: '#6b757f' }, { label: 'Yes, discard', icon: 'discard', color: K.bad }] },
+};
+
+function go(screen) {
+  S.screen = screen;
+  renderLegend();
+}
+
+// ---------- session ----------
+function curStep(s) {
+  return s.mode === 'program' ? s.steps[s.idx] : { kind: s.kind, label: PHASE_LABEL[s.kind], detail: '' };
+}
+function startSession(mode, prog) {
+  S.session = {
+    mode, name: prog ? prog.name : 'Tracker', steps: prog ? prog.steps : null,
+    idx: 0, stepT: 0, total: 0, kind: 'heat', lap: 1, laps: [],
+    hrSum: 0, hrT: 0, hrMax: 0, kindT: { heat: 0, cold: 0, rest: 0 }, complete: false,
+    zkey: null, zseg: [], zoneT: [0, 0, 0, 0, 0, 0], zhist: [], marks: [],
+    warn: false, warnN: 0, warnT: 0, lastBuzz: 0,
+  };
+  S.page = 0;
+  go('run');
+  vibrate();
+  const st = curStep(S.session);
+  banner(st);
+  return mode === 'program' ? `start program "${prog.name}"` : 'start tracker';
+}
+function closeLap(s) {
+  const st = curStep(s);
+  s.laps.push({ kind: st.kind, dur: s.stepT, round: st.round || 0 });
+  s.marks.push(s.total);
+}
+function advance(s, manual) {
+  closeLap(s);
+  if (s.mode === 'program') {
+    if (s.idx + 1 >= s.steps.length) {
+      s.complete = true; s.stepT = s.steps[s.idx].dur;
+      vibrate(); S.sel.pause = 0; go('pause');
+      log('timer', '', 'program complete, save or discard');
+      return;
+    }
+    s.idx++; s.stepT = 0;
+    if (!manual) log('timer', '', `step done → ${s.steps[s.idx].label}`);
+  } else {
+    s.kind = NEXT_PHASE[s.kind]; s.stepT = 0; s.lap++;
+  }
+  banner(curStep(s));
+  vibrate();
+}
+// Fast-forward runs the simulation through the skipped time in 1 s ticks, so heart rate, zones,
+// the ring, warnings and totals come out as if the user had waited.
+const FF_CAP = 4 * 3600;
+function fastForward(toEnd) {
+  const s = S.session;
+  if (!s || s.complete) return;
+  const t0 = s.total, startIdx = s.idx, startLap = s.lap;
+  if (s.mode === 'program') {
+    while (!s.complete && (toEnd || s.idx === startIdx) && s.total - t0 < FF_CAP) {
+      tickSession(s, 1);
+      if (s.stepT >= s.steps[s.idx].dur) advance(s, false);
+    }
+  } else {
+    // Tracker phases have no planned end: run to the phase's reference length, then mark the next phase.
+    const target = Math.max(REF_LEN[s.kind], s.stepT);
+    while (s.stepT < target) tickSession(s, 1);
+    if (s.lap === startLap) advance(s, false);
+  }
+  if (!s.complete && S.screen !== 'run' && S.screen !== 'pause') go('run');
+  log('sim', '', `skipped ${fmt(s.total - t0)}${s.complete ? ', program complete' : ''}`);
+}
+function updateFF() {
+  const s = S.session, live = !!(s && !s.complete);
+  const next = document.getElementById('ff-next'), end = document.getElementById('ff-end');
+  next.disabled = !live;
+  end.disabled = !live || s.mode !== 'program';
+  document.getElementById('ff-hint').textContent = !s
+    ? 'Start a session to skip ahead.'
+    : s.complete ? 'Program complete. Save or discard on the watch.'
+    : s.mode === 'program'
+      ? 'Simulates the skipped time, so heart rate, zones and the ring fill in as if you had waited.'
+      : 'Tracker phases have no planned end. Skipping runs the phase to its reference length (heat 15 min, cold 3, rest 15), then marks the next phase. A tracker session has no end to skip to.';
+}
+document.getElementById('ff-next').addEventListener('click', () => fastForward(false));
+document.getElementById('ff-end').addEventListener('click', () => fastForward(true));
+
+function hrVisible(s) {
+  if (!s || cfg.wear !== 'strap') return true;
+  const st = curStep(s);
+  return !(st.kind === 'cold' && s.stepT > 4 && (s.mode === 'tracker' || s.stepT < st.dur - 4));
+}
+function tickHR(h, s) {
+  let target = REST_HR + 2, tau = 60;
+  if (s) {
+    const st = curStep(s), t = s.stepT;
+    if (st.kind === 'heat') {
+      const r = RESPONSE[cfg.response], kind = st.label === 'Infrared' ? 0.55 : st.label === 'Steam' ? 0.76 : 1;
+      target = REST_HR + (cfg.maxHr - REST_HR) * r.gain * kind * (1 - Math.exp(-t / r.tau)); tau = 30;
+    }
+    else if (st.kind === 'cold') { target = t < 25 ? REST_HR + 46 : REST_HR + 8; tau = t < 25 ? 6 : 15; }
+    else { target = REST_HR + 4; tau = 70; }
+  }
+  hr += (target - hr) * (1 - Math.exp(-h / tau));
+}
+function tickSession(s, h) {
+  const st = curStep(s);
+  const key = s.mode === 'program' ? s.idx : s.lap;
+  if (s.zkey !== key) { s.zkey = key; s.zseg = []; }
+  const t0 = s.stepT;
+  s.stepT += h; s.total += h; s.kindT[st.kind] += h;
+  tickHR(h, s);
+  sensorTick(h);
+  s.hrSum += hrShown * h; s.hrT += h; s.hrMax = Math.max(s.hrMax, hrShown);
+  // Zone history for the ring: a new segment each time the displayed zone changes. -1 means no signal.
+  const z = hrVisible(s) ? hrZone : -1;
+  const lastSeg = s.zseg[s.zseg.length - 1];
+  if (!lastSeg || lastSeg.z !== z) s.zseg.push({ t: t0, z });
+  // Same history for the whole session, for the timeline strip.
+  const lastH = s.zhist[s.zhist.length - 1];
+  if (!lastH || lastH.z !== z) s.zhist.push({ t: s.total - h, z });
+  if (z >= 0) s.zoneT[z] += h;
+  // Warning: on at the threshold, off HR_HYST bpm below it.
+  const thr = warnLevel();
+  if (thr && z >= 0) {
+    if (!s.warn && hrFast >= thr) { s.warn = true; s.warnN++; s.lastBuzz = 0; log('alert', '', `HR ${Math.round(hrFast)} ≥ ${thr}: warning on`); }
+    else if (s.warn && hrFast < thr - HR_HYST) { s.warn = false; log('alert', '', `HR below ${thr - HR_HYST}: warning off`); }
+  } else if (s.warn) s.warn = false;
+  if (s.warn) s.warnT += h;
+}
+function finishSession() {
+  const s = S.session;
+  if (!s.complete) closeLap(s);
+  const rounds = s.mode === 'program'
+    ? Math.max(0, ...s.laps.filter(l => l.kind === 'heat').map(l => l.round))
+    : s.laps.filter(l => l.kind === 'heat').length;
+  S.summary = {
+    name: s.name, mode: s.mode, total: s.total, laps: s.laps.length, rounds,
+    heat: s.kindT.heat, cold: s.kindT.cold, rest: s.kindT.rest,
+    avg: s.hrT ? Math.round(s.hrSum / s.hrT) : 0, max: Math.round(s.hrMax),
+    zoneT: s.zoneT.slice(), warnN: s.warnN, warnT: s.warnT,
+    zhist: s.zhist.slice(), marks: s.marks.slice(),
+  };
+  S.session = null;
+  vibrate();
+  go('summary');
+  return `ActivityRecording.save, ${S.summary.laps} laps`;
+}
+
+// ---------- feedback ----------
+const watchEl = document.getElementById('watch');
+function vibrate() {
+  watchEl.classList.remove('buzz');
+  void watchEl.offsetWidth;
+  watchEl.classList.add('buzz');
+}
+function banner(st) { S.banner = { st, t: performance.now() }; }
+function toast(text) { S.toast = { text, t: performance.now() }; }
+
+// ---------- input ----------
+function press(btn) {
+  const sc = S.screen;
+  const list = LISTS[sc];
+  if (list && (btn === 'UP' || btn === 'DOWN')) {
+    const n = list.items().length, k = list.key;
+    S.sel[k] = (S.sel[k] + (btn === 'DOWN' ? 1 : -1) + n) % n;
+    return btn === 'DOWN' ? 'next item' : 'previous item';
+  }
+  switch (sc) {
+    case 'face':
+      if (btn === 'START') { go('acts'); return 'open activities'; }
+      return 'no action on the watch face';
+    case 'acts': {
+      if (btn === 'BACK') { go('face'); return 'back to watch face'; }
+      const a = ACTS[S.sel.acts];
+      if (a.app) { S.sel.sauna = S.sel.sauna || 0; go('sauna'); return 'launch Sauna app'; }
+      toast(`${a.label} is not simulated`);
+      return `${a.label}: not simulated`;
+    }
+    case 'sauna':
+      if (btn === 'BACK') { go('acts'); return 'exit app'; }
+      if (S.sel.sauna === 0) { go('pre'); return 'Tracker selected'; }
+      S.sel.progs = Math.min(S.sel.progs, programs.length - 1);
+      go('progs'); return 'Program selected';
+    case 'progs':
+      if (btn === 'BACK') { go('sauna'); return 'back to modes'; }
+      S.prog = programs[S.sel.progs]; S.stepScroll = 0;
+      go('prog'); return `open "${S.prog.name}"`;
+    case 'prog': {
+      if (btn === 'BACK') { go('progs'); return 'back to programs'; }
+      const max = Math.max(0, S.prog.steps.length - 4);
+      if (btn === 'UP') { S.stepScroll = Math.max(0, S.stepScroll - 1); return 'scroll steps'; }
+      if (btn === 'DOWN') { S.stepScroll = Math.min(max, S.stepScroll + 1); return 'scroll steps'; }
+      return startSession('program', S.prog);
+    }
+    case 'pre':
+      if (btn === 'BACK') { go('sauna'); return 'back to modes'; }
+      if (btn === 'START') return startSession('tracker');
+      return 'no action';
+    case 'run': {
+      const s = S.session;
+      if (btn === 'START') { S.sel.pause = 0; go('pause'); return 'pause timer'; }
+      if (btn === 'UP' || btn === 'DOWN') { S.page = 1 - S.page; return S.page ? 'session totals page' : 'phase page'; }
+      advance(s, true);
+      return s.mode === 'program' ? 'lap: skip to next step' : `lap: phase → ${PHASE_LABEL[s.kind]}`;
+    }
+    case 'pause': {
+      const s = S.session;
+      if (btn === 'BACK') {
+        if (s.complete) return 'program complete: choose Save or Discard';
+        go('run'); return 'resume';
+      }
+      const item = LISTS.pause.items()[S.sel.pause].label;
+      if (item === 'Resume') { go('run'); return 'resume'; }
+      if (item === 'Save') return finishSession();
+      S.sel.confirm = 0; go('confirm'); return 'confirm discard';
+    }
+    case 'confirm':
+      if (btn === 'BACK' || S.sel.confirm === 0) { go('pause'); return 'keep session'; }
+      S.session = null; toast('Session discarded'); go('face');
+      return 'session discarded';
+    case 'summary':
+      if (btn === 'START' || btn === 'BACK') { go('face'); return 'back to watch face'; }
+      return 'no action';
+  }
+  return 'no action';
+}
+function menu() {
+  if (['sauna', 'progs', 'prog', 'pre'].includes(S.screen)) { toast('Settings: coming later'); return 'app settings (not designed yet)'; }
+  return 'ignored on this screen';
+}
+
+// ---------- event log ----------
+const logEl = document.getElementById('log');
+const LOG = [];
+const t0 = performance.now();
+function log(type, key, note) {
+  LOG.unshift({ t: (performance.now() - t0) / 1000, type, key: key || '', note: note || '' });
+  if (LOG.length > 12) LOG.length = 12;
+  logEl.innerHTML = '';
+  for (const e of LOG) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="t"></span><span class="ev"></span><span></span><span class="n"></span>';
+    li.children[0].textContent = e.t.toFixed(2);
+    li.children[1].textContent = e.type;
+    li.children[2].textContent = e.key;
+    li.children[3].textContent = e.note;
+    li.title = `${e.type} ${e.key} ${e.note}`;
+    logEl.append(li);
+  }
+}
+
+// ---------- firmware model ----------
+const phys = {};
+function physDown(btn) {
+  if (phys[btn]) return;
+  const p = phys[btn] = { menuFired: false, timer: 0 };
+  btnEls[btn].classList.add('down');
+  labelEls[btn].classList.add('on');
+  if (btn === 'LIGHT') { log('system', 'LIGHT', 'backlight, never reaches the app'); return; }
+  if (btn === 'UP') p.timer = setTimeout(() => { p.menuFired = true; log('onMenu', '', menu()); }, MENU_HOLD_MS);
+}
+function physUp(btn) {
+  const p = phys[btn];
+  if (!p) return;
+  delete phys[btn];
+  clearTimeout(p.timer);
+  btnEls[btn].classList.remove('down');
+  labelEls[btn].classList.remove('on');
+  if (btn === 'LIGHT') return;
+  if (p.menuFired) { log('onKeyReleased', KEYCODE[btn], 'long press already sent onMenu'); return; }
+  log('onKey', KEYCODE[btn], press(btn));
+}
+function releaseAll() { for (const b of Object.keys(phys)) physUp(b); }
+
+// ---------- bezel buttons and labels ----------
+const deviceEl = document.getElementById('device');
+const btnEls = {}, labelEls = {};
+for (const btn of Object.keys(BTN_ANGLE)) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'hw';
+  b.dataset.btn = btn;
+  b.style.setProperty('--a', BTN_ANGLE[btn] + 'deg');
+  b.setAttribute('aria-label', `${btn} button`);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} physDown(btn); });
+  const up = () => physUp(btn);
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('lostpointercapture', up);
+  b.addEventListener('contextmenu', e => e.preventDefault());
+  b.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); e.stopPropagation(); physDown(btn); } });
+  b.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); physUp(btn); } });
+  watchEl.append(b);
+  btnEls[btn] = b;
+  const l = document.createElement('div');
+  l.className = 'blabel';
+  deviceEl.append(l);
+  labelEls[btn] = l;
+}
+
+function help(btn) {
+  if (btn === 'LIGHT') return 'Backlight, system';
+  const sc = S.screen, s = S.session;
+  const list = { UP: 'Previous', DOWN: 'Next' };
+  const T = {
+    face: { START: 'Activities', BACK: '–', UP: '–', DOWN: '–' },
+    acts: { START: 'Open', BACK: 'Watch face', ...list },
+    sauna: { START: 'Select mode', BACK: 'Exit app', UP: 'Previous · hold: settings', DOWN: 'Next' },
+    progs: { START: 'Open program', BACK: 'Modes', UP: 'Previous · hold: settings', DOWN: 'Next' },
+    prog: { START: 'Begin', BACK: 'Programs', UP: 'Scroll steps · hold: settings', DOWN: 'Scroll steps' },
+    pre: { START: 'Begin', BACK: 'Modes', UP: 'Hold: settings', DOWN: '–' },
+    run: { START: 'Pause', BACK: s && s.mode === 'program' ? 'Lap: skip step' : 'Lap: next phase', UP: 'Data page', DOWN: 'Data page' },
+    pause: { START: 'Select', BACK: s && s.complete ? '–' : 'Resume', ...list },
+    confirm: { START: 'Select', BACK: 'Keep session', ...list },
+    summary: { START: 'Done', BACK: 'Done', UP: '–', DOWN: '–' },
+  };
+  return T[sc][btn];
+}
+const SCREEN_NAME = { face: 'Watch face', acts: 'Activity list', sauna: 'Sauna: mode', progs: 'Sauna: programs', prog: 'Sauna: program detail', pre: 'Sauna: tracker ready', run: 'Sauna: running', pause: 'Sauna: paused', confirm: 'Sauna: discard?', summary: 'Sauna: saved' };
+
+function placeLabels() {
+  const size = watchEl.getBoundingClientRect().width;
+  const padL = parseFloat(getComputedStyle(deviceEl).paddingLeft) || 0;
+  const cx = padL + size / 2, cy = size / 2, rr = size / 2 + 30;
+  for (const btn of Object.keys(BTN_ANGLE)) {
+    const a = BTN_ANGLE[btn] * Math.PI / 180;
+    const x = cx + Math.sin(a) * rr, y = cy - Math.cos(a) * rr;
+    const l = labelEls[btn], left = Math.sin(a) < 0;
+    l.classList.toggle('l', left);
+    l.style.top = y + 'px';
+    l.style.left = (left ? x - 104 : x) + 'px';
+  }
+}
+function renderLegend() {
+  const tb = document.querySelector('#legend tbody');
+  tb.innerHTML = '';
+  document.getElementById('legend-now').textContent = 'On ' + SCREEN_NAME[S.screen].toLowerCase();
+  for (const btn of ['START', 'BACK', 'UP', 'DOWN', 'LIGHT']) {
+    const name = btn[0] + btn.slice(1).toLowerCase();
+    const act = help(btn);
+    const tr = document.createElement('tr');
+    if (btn === 'LIGHT') tr.className = 'sys';
+    tr.innerHTML = '<td></td><td></td><td></td>';
+    tr.children[0].textContent = name;
+    for (const k of BTN_KEYS[btn]) { const kb = document.createElement('kbd'); kb.textContent = k; tr.children[1].append(kb); }
+    tr.children[2].textContent = act;
+    tb.append(tr);
+    const l = labelEls[btn];
+    l.innerHTML = '<b></b><span></span>';
+    l.firstChild.textContent = `${name} · ${BTN_KEYS[btn].join(' ')}`;
+    l.lastChild.textContent = act;
+  }
+  placeLabels();
+}
+window.addEventListener('resize', placeLabels);
+
+// keyboard
+const heldKeys = {};
+let lastPointer = false;
+document.addEventListener('pointerdown', () => { lastPointer = true; }, true);
+document.addEventListener('keydown', () => { lastPointer = false; }, true);
+window.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const tg = e.target;
+  if (tg && tg.closest && (tg.closest('input, select, textarea') || (tg.closest('button') && e.key === 'Enter'))) return;
+  const b = KEYMAP[e.key.toLowerCase()];
+  if (!b) return;
+  e.preventDefault();
+  if (e.repeat || heldKeys[e.key]) return;
+  heldKeys[e.key] = b;
+  physDown(b);
+});
+window.addEventListener('keyup', e => {
+  const b = heldKeys[e.key];
+  if (!b) return;
+  delete heldKeys[e.key];
+  physUp(b);
+});
+window.addEventListener('blur', () => { for (const k of Object.keys(heldKeys)) delete heldKeys[k]; releaseAll(); });
+
+// ---------- canvas drawing ----------
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function setFont(size, weight, fam) { ctx.font = `${weight || 600} ${size}px ${fam || FONT}`; }
+function txt(s, x, y, size, color, weight, align, spacing, fam) {
+  setFont(size, weight, fam);
+  try { ctx.letterSpacing = (spacing || 0) + 'px'; } catch (_) {}
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(s, x, y);
+  try { ctx.letterSpacing = '0px'; } catch (_) {}
+}
+function fit(s, size, weight, maxW) {
+  setFont(size, weight);
+  if (ctx.measureText(s).width <= maxW) return s;
+  while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s + '…';
+}
+// Numbers that tick (clock, timers, totals) use a monospaced face so digits never shift sideways.
+function num(s, x, y, size, color, align) { txt(s, x, y, size, color, 700, align, 0, MONO); }
+function fitSize(s, size, weight, maxW, fam) {
+  setFont(size, weight, fam);
+  const w = ctx.measureText(s).width;
+  return w > maxW ? Math.floor(size * maxW / w) : size;
+}
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function heart(x, y, s, color) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 20, s / 20); ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(0, 8);
+  ctx.bezierCurveTo(-12, 0, -11, -11, -5, -10); ctx.bezierCurveTo(-2, -10, 0, -7, 0, -6);
+  ctx.bezierCurveTo(0, -7, 2, -10, 5, -10); ctx.bezierCurveTo(11, -11, 12, 0, 0, 8);
+  ctx.fill(); ctx.restore();
+}
+function bezelArc(angleDeg, span, color, width, r) {
+  const a = (angleDeg - 90) * Math.PI / 180, h = span * Math.PI / 360;
+  ctx.beginPath(); ctx.arc(C, C, r || 221, a - h, a + h);
+  ctx.strokeStyle = color; ctx.lineWidth = width || 6; ctx.lineCap = 'round'; ctx.stroke();
+}
+
+function icon(kind, x, y, r, color, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#ffffff'; ctx.fillStyle = '#ffffff';
+  ctx.lineWidth = Math.max(2, r * 0.13); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const u = r;
+  ctx.beginPath();
+  switch (kind) {
+    case 'heat':
+      for (let i = -1; i <= 1; i++) {
+        const x0 = x + i * 0.36 * u;
+        ctx.moveTo(x0, y + 0.48 * u);
+        ctx.quadraticCurveTo(x0 + 0.2 * u, y + 0.24 * u, x0, y);
+        ctx.quadraticCurveTo(x0 - 0.2 * u, y - 0.24 * u, x0, y - 0.48 * u);
+      }
+      ctx.stroke(); break;
+    case 'cold':
+      for (let i = 0; i < 3; i++) {
+        const a = i * Math.PI / 3;
+        ctx.moveTo(x - Math.cos(a) * 0.5 * u, y - Math.sin(a) * 0.5 * u);
+        ctx.lineTo(x + Math.cos(a) * 0.5 * u, y + Math.sin(a) * 0.5 * u);
+      }
+      ctx.stroke(); break;
+    case 'rest':
+      ctx.arc(x, y, 0.42 * u, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x + 0.22 * u, y - 0.16 * u, 0.36 * u, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'run':
+      ctx.moveTo(x - 0.4 * u, y - 0.35 * u); ctx.lineTo(x - 0.05 * u, y); ctx.lineTo(x - 0.4 * u, y + 0.35 * u);
+      ctx.moveTo(x + 0.05 * u, y - 0.35 * u); ctx.lineTo(x + 0.4 * u, y); ctx.lineTo(x + 0.05 * u, y + 0.35 * u);
+      ctx.stroke(); break;
+    case 'bike':
+      ctx.arc(x - 0.36 * u, y + 0.16 * u, 0.24 * u, 0, Math.PI * 2);
+      ctx.moveTo(x + 0.6 * u, y + 0.16 * u); ctx.arc(x + 0.36 * u, y + 0.16 * u, 0.24 * u, 0, Math.PI * 2);
+      ctx.moveTo(x - 0.36 * u, y + 0.16 * u); ctx.lineTo(x - 0.05 * u, y - 0.3 * u); ctx.lineTo(x + 0.36 * u, y + 0.16 * u);
+      ctx.stroke(); break;
+    case 'hike':
+      ctx.moveTo(x - 0.55 * u, y + 0.38 * u); ctx.lineTo(x - 0.12 * u, y - 0.36 * u); ctx.lineTo(x + 0.12 * u, y + 0.04 * u);
+      ctx.lineTo(x + 0.28 * u, y - 0.16 * u); ctx.lineTo(x + 0.55 * u, y + 0.38 * u); ctx.closePath();
+      ctx.stroke(); break;
+    case 'swim':
+      for (const dy of [-0.18, 0.2]) {
+        ctx.moveTo(x - 0.5 * u, y + dy * u);
+        ctx.quadraticCurveTo(x - 0.25 * u, y + (dy - 0.18) * u, x, y + dy * u);
+        ctx.quadraticCurveTo(x + 0.25 * u, y + (dy + 0.18) * u, x + 0.5 * u, y + dy * u);
+      }
+      ctx.stroke(); break;
+    case 'strength':
+      ctx.moveTo(x - 0.5 * u, y); ctx.lineTo(x + 0.5 * u, y);
+      ctx.moveTo(x - 0.32 * u, y - 0.28 * u); ctx.lineTo(x - 0.32 * u, y + 0.28 * u);
+      ctx.moveTo(x + 0.32 * u, y - 0.28 * u); ctx.lineTo(x + 0.32 * u, y + 0.28 * u);
+      ctx.stroke(); break;
+    case 'breath':
+      ctx.arc(x, y, 0.42 * u, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 0.14 * u, 0, Math.PI * 2); ctx.fill(); break;
+    case 'tracker':
+      ctx.arc(x, y + 0.08 * u, 0.4 * u, 0, Math.PI * 2);
+      ctx.moveTo(x, y - 0.32 * u); ctx.lineTo(x, y - 0.5 * u);
+      ctx.moveTo(x, y + 0.08 * u); ctx.lineTo(x + 0.2 * u, y - 0.1 * u);
+      ctx.stroke(); break;
+    case 'program':
+      for (let i = -1; i <= 1; i++) {
+        ctx.moveTo(x - 0.12 * u, y + i * 0.3 * u); ctx.lineTo(x + 0.46 * u, y + i * 0.3 * u);
+      }
+      ctx.stroke();
+      for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(x - 0.36 * u, y + i * 0.3 * u, 0.08 * u, 0, Math.PI * 2); ctx.fill(); }
+      break;
+    case 'resume':
+      ctx.moveTo(x - 0.22 * u, y - 0.38 * u); ctx.lineTo(x + 0.4 * u, y); ctx.lineTo(x - 0.22 * u, y + 0.38 * u); ctx.closePath(); ctx.fill(); break;
+    case 'save':
+      ctx.moveTo(x - 0.38 * u, y + 0.02 * u); ctx.lineTo(x - 0.1 * u, y + 0.3 * u); ctx.lineTo(x + 0.4 * u, y - 0.26 * u); ctx.stroke(); break;
+    case 'discard':
+      ctx.moveTo(x - 0.3 * u, y - 0.3 * u); ctx.lineTo(x + 0.3 * u, y + 0.3 * u);
+      ctx.moveTo(x + 0.3 * u, y - 0.3 * u); ctx.lineTo(x - 0.3 * u, y + 0.3 * u); ctx.stroke(); break;
+    case 'back':
+      ctx.moveTo(x + 0.1 * u, y - 0.36 * u); ctx.lineTo(x - 0.26 * u, y); ctx.lineTo(x + 0.1 * u, y + 0.36 * u); ctx.stroke(); break;
+  }
+  ctx.restore();
+}
+
+function scrollbar(n, sel) {
+  if (n < 2) return;
+  const span = 56, a0 = -span / 2;
+  const toRad = d => d * Math.PI / 180;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(C, C, 214, toRad(a0), toRad(a0 + span));
+  ctx.strokeStyle = K.dim2; ctx.lineWidth = 4; ctx.stroke();
+  const seg = span / n;
+  ctx.beginPath(); ctx.arc(C, C, 214, toRad(a0 + sel * seg + 1), toRad(a0 + (sel + 1) * seg - 1));
+  ctx.strokeStyle = K.fg; ctx.lineWidth = 6; ctx.stroke();
+}
+
+function drawList(title, items, sel, titleColor) {
+  if (title) txt(title, C, 66, 26, titleColor || K.dim, 600, 'center', 2);
+  const cy = 240, gap = 104;
+  for (let d = -1; d <= 1; d++) {
+    const i = sel + d;
+    if (i < 0 || i >= items.length) continue;
+    const it = items[i], y = cy + d * gap, big = d === 0;
+    if (big) { rrect(44, y - 48, 366, 96, 48); ctx.fillStyle = K.sel; ctx.fill(); }
+    const r = big ? 30 : 20, ix = big ? 96 : 116;
+    icon(it.icon, ix, y, r, it.color || K.heat, big ? 1 : 0.5);
+    const lx = ix + r + 18, maxW = 400 - lx;
+    if (big && it.sub) {
+      txt(fit(it.label, 36, 600, maxW), lx, y - 14, 36, K.fg, 600, 'left');
+      txt(fit(it.sub, 23, 500, maxW), lx, y + 20, 23, K.dim, 500, 'left');
+    } else {
+      const sz = big ? 40 : 30;
+      txt(fit(it.label, sz, 600, maxW - 10), lx, y, sz, big ? K.fg : K.dim, 600, 'left');
+    }
+  }
+  scrollbar(items.length, sel);
+}
+
+function timeline(steps, x, y, w, h, upto) {
+  const total = steps.reduce((a, s) => a + s.dur, 0), gap = 2;
+  const avail = w - gap * (steps.length - 1);
+  let cx = x;
+  steps.forEach((s, i) => {
+    const sw = Math.max(2, avail * s.dur / total);
+    ctx.globalAlpha = s.kind === 'rest' ? 0.45 : 1;
+    if (upto != null && i < upto) ctx.globalAlpha *= 0.35;
+    ctx.fillStyle = KIND_COLOR[s.kind];
+    ctx.fillRect(cx, y, sw, h);
+    cx += sw + gap;
+  });
+  ctx.globalAlpha = 1;
+}
+
+function hrText(s) {
+  return hrVisible(s) ? String(hrShown) : '--';
+}
+
+function drawFace() {
+  const now = new Date();
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  txt(`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`, C, 132, 30, K.dim, 600, 'center', 3);
+  num(`${pad(now.getHours())}:${pad(now.getMinutes())}`, C, 232, 136, K.fg);
+  heart(C - 38, 330, 24, K.bad);
+  num(hrText(null), C - 18, 331, 34, K.fg, 'left');
+  txt('82%', C, 392, 24, K.dim, 500);
+}
+
+function drawProgDetail() {
+  const p = S.prog;
+  txt(fit(p.name, 34, 600, 300), C, 80, 34, K.fg, 600);
+  txt(`${p.rounds} rounds · ${fmtMin(p.total)}`, C, 116, 24, K.dim, 500);
+  timeline(p.steps, 77, 144, 300, 12);
+  const rows = 4, y0 = 196, dy = 46;
+  for (let k = 0; k < rows; k++) {
+    const i = S.stepScroll + k, st = p.steps[i];
+    if (!st) break;
+    const y = y0 + k * dy;
+    txt(String(st.round), 84, y, 20, K.dim2, 600);
+    ctx.fillStyle = KIND_COLOR[st.kind];
+    ctx.beginPath(); ctx.arc(104, y, 7, 0, Math.PI * 2); ctx.fill();
+    txt(st.label, 120, y, 28, K.fg, 600, 'left');
+    setFont(28, 600);
+    const lw = ctx.measureText(st.label).width;
+    txt(fit(st.detail, 21, 500, 300 - 120 - lw - 70), 128 + lw, y + 2, 21, K.dim, 500, 'left');
+    txt(fmtShort(st.dur), 366, y, 28, K.fg, 600, 'right');
+  }
+  if (p.steps.length > rows) {
+    const n = p.steps.length - rows + 1;
+    scrollbar(n, S.stepScroll);
+  }
+  heart(C - 70, 396, 20, K.bad);
+  txt(`${hrText(null)} · ${cfg.wear === 'wrist' ? 'wrist HR' : 'chest strap'}`, C - 52, 397, 22, K.dim, 500, 'left');
+  bezelArc(START_ANGLE, 16, K.heat);
+}
+
+function drawPre() {
+  icon('tracker', C, 108, 32, K.heat);
+  txt('Tracker', C, 178, 44, K.fg, 600);
+  txt('Sauna · Cold · Rest', C, 220, 24, K.dim, 500);
+  txt('BACK marks the next phase', C, 252, 22, K.dim2, 500);
+  heart(C - 46, 310, 26, K.bad);
+  num(hrText(null), C - 24, 312, 40, ZONE_TEXT[hrZone], 'left');
+  const wrist = cfg.wear === 'wrist';
+  ctx.fillStyle = K.ok; ctx.beginPath(); ctx.arc(C - 92, 356, 6, 0, Math.PI * 2); ctx.fill();
+  txt(wrist ? 'Wrist HR ready' : 'Chest strap ready', C - 78, 357, 23, K.dim, 500, 'left');
+  txt('START to begin', C, 400, 22, K.heat, 600);
+  bezelArc(START_ANGLE, 16, K.heat);
+}
+
+function zoneRing(s, st) {
+  const R = 217, Wd = 16, a0 = -Math.PI / 2, TAU = Math.PI * 2;
+  ctx.lineCap = 'butt';
+  ctx.beginPath(); ctx.arc(C, C, R, 0, TAU); ctx.strokeStyle = K.track; ctx.lineWidth = Wd; ctx.stroke();
+  // Program: one turn is the planned step. Tracker: one turn is a reference length, rescaled once the phase runs over.
+  const scale = s.mode === 'program' ? st.dur : Math.max(REF_LEN[st.kind], s.stepT);
+  const segs = s.zseg;
+  segs.forEach((g, i) => {
+    const t1 = Math.min(i + 1 < segs.length ? segs[i + 1].t : s.stepT, scale);
+    if (t1 <= g.t) return;
+    ctx.beginPath();
+    ctx.arc(C, C, R, a0 + g.t / scale * TAU, a0 + t1 / scale * TAU + 0.004);
+    ctx.strokeStyle = g.z < 0 ? K.dim2 : ZONE_RING[g.z]; ctx.lineWidth = Wd; ctx.stroke();
+  });
+  // Now marker
+  const a = a0 + Math.min(1, s.stepT / scale) * TAU;
+  ctx.beginPath(); ctx.moveTo(C + Math.cos(a) * (R - 12), C + Math.sin(a) * (R - 12)); ctx.lineTo(C + Math.cos(a) * (R + 9), C + Math.sin(a) * (R + 9));
+  ctx.strokeStyle = K.fg; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+}
+
+function hrBlock(s, y) {
+  const h = hrText(s), vis = h !== '--', z = vis ? hrZone : -1;
+  const col = vis ? ZONE_TEXT[z] : K.dim;
+  // A fixed box sized for the widest case (heart + three digits + zone badge) is centred once.
+  // Content is right-aligned in it, so the digits and badge never move; only the heart steps
+  // left when the reading gains a third digit. The badge slot stays reserved below zone 1.
+  setFont(58, 700, MONO);
+  const HEART = 34, GAP = 10, PILL = 52, PGAP = 12;
+  const maxW = ctx.measureText('188').width, hw = ctx.measureText(h).width;
+  const boxR = C + (HEART + GAP + maxW + PGAP + PILL) / 2;
+  const pillX = boxR - PILL, digitsR = pillX - PGAP;
+  heart(digitsR - hw - GAP - HEART / 2, y, HEART, vis ? (z > 0 ? col : K.bad) : K.dim2);
+  num(h, digitsR, y + 2, 58, col, 'right');
+  if (z > 0) {
+    rrect(pillX, y - 19, PILL, 38, 10); ctx.fillStyle = col; ctx.fill();
+    num('Z' + z, pillX + PILL / 2, y + 1, 30, '#000', 'center');
+  }
+  if (!vis) txt('no signal', C, y + 38, 20, K.dim, 500);
+}
+
+function zoneBar(zoneT, x, y, w, h) {
+  const tot = zoneT.reduce((a, b) => a + b, 0);
+  if (!tot) return;
+  let cx = x;
+  zoneT.forEach((t, z) => {
+    if (!t) return;
+    const sw = w * t / tot;
+    ctx.fillStyle = ZONE_RING[z]; ctx.fillRect(cx, y, sw, h);
+    cx += sw;
+  });
+}
+
+function zoneTimeline(src, x, y, w, h) {
+  const tot = src.total, hist = src.zhist;
+  if (!tot || !hist.length) return;
+  hist.forEach((g, i) => {
+    const t1 = i + 1 < hist.length ? hist[i + 1].t : tot;
+    ctx.fillStyle = g.z < 0 ? K.dim2 : ZONE_RING[g.z];
+    ctx.fillRect(x + w * g.t / tot, y, Math.max(1, w * (t1 - g.t) / tot) + 0.5, h);
+  });
+  // Phase changes as notches
+  ctx.fillStyle = '#000';
+  for (const m of src.marks) if (m > 0 && m < tot - 0.5) ctx.fillRect(Math.round(x + w * m / tot) - 1, y, 2, h);
+}
+
+// Strips span the same left and right margins as the metric rows above them. y is the strip block's centre.
+function zoneStrips(src, y, x0, x1) {
+  const w = x1 - x0;
+  if (cfg.zoneBar === 'both') { zoneTimeline(src, x0, y - 14, w, 12); zoneBar(src.zoneT, x0, y + 3, w, 12); }
+  else if (cfg.zoneBar === 'timeline') zoneTimeline(src, x0, y - 8, w, 16);
+  else zoneBar(src.zoneT, x0, y - 8, w, 16);
+}
+
+function drawRun(now) {
+  const s = S.session, st = curStep(s), col = KIND_COLOR[st.kind];
+  // Warning flash: 2 Hz, under the 3 flashes per second photosensitivity limit. Steady with reduced motion.
+  if (s.warn && (REDUCED || Math.floor(now / 250) % 2 === 0)) {
+    ctx.fillStyle = REDUCED ? 'rgba(255,40,40,0.3)' : 'rgba(255,40,40,0.5)';
+    ctx.fillRect(0, 0, W, W);
+  }
+  zoneRing(s, st);
+  // page dots
+  for (let i = 0; i < 2; i++) {
+    ctx.fillStyle = i === S.page ? K.fg : K.dim2;
+    ctx.beginPath(); ctx.arc(30, C - 9 + i * 18, 4, 0, Math.PI * 2); ctx.fill();
+  }
+  if (S.page === 1) { drawTotals(s); return; }
+
+  txt(st.label.toUpperCase(), C, 84, 34, col, 700, 'center', 2);
+  if (s.mode === 'program') {
+    txt(fit(st.detail, 24, 500, 280), C, 120, 24, K.dim, 500);
+    const rem = st.dur - s.stepT;
+    const big = fmt(rem), sz = fitSize(big, 124, 700, 330, MONO);
+    num(big, C, 210, sz, K.fg);
+    txt(`Round ${st.round}/${S.session.steps[S.session.steps.length - 1].round} · step ${s.idx + 1}/${s.steps.length}`, C, 288, 24, K.dim, 500);
+  } else {
+    txt(`Lap ${s.lap}`, C, 120, 24, K.dim, 500);
+    const big = fmt(s.stepT), sz = fitSize(big, 124, 700, 330, MONO);
+    num(big, C, 210, sz, K.fg);
+    txt('Total', C - 8, 288, 24, K.dim, 500, 'right');
+    num(fmt(s.total), C + 2, 289, 27, K.dim, 'left');
+  }
+  if (s.warn) {
+    rrect(C - 118, 102, 236, 38, 19); ctx.fillStyle = K.bad; ctx.fill();
+    txt('HIGH HEART RATE', C, 122, 22, '#000', 700, 'center', 1);
+  }
+  hrBlock(s, 340);
+  if (s.mode === 'program') {
+    const n = s.steps[s.idx + 1];
+    txt(n ? `Next  ${n.label} ${fmtShort(n.dur)}` : 'Last step', C, 398, 23, K.dim, 500);
+  } else {
+    txt(`Next  ${PHASE_LABEL[NEXT_PHASE[s.kind]]}`, C, 398, 23, K.dim, 500);
+  }
+}
+
+function drawTotals(s) {
+  txt('SESSION', C, 74, 26, K.dim, 600, 'center', 2);
+  const rows = [
+    ['Total', fmt(s.total), K.fg],
+    ['Heat', fmt(s.kindT.heat), K.heat],
+    ['Cold', fmt(s.kindT.cold), K.cold],
+    ['Rest', fmt(s.kindT.rest), K.rest],
+    ['Max HR', s.hrMax ? String(Math.round(s.hrMax)) : '--', K.fg],
+  ];
+  rows.forEach(([k, v, c], i) => {
+    const y = 128 + i * 54;
+    txt(k, 96, y, 26, K.dim, 500, 'left');
+    num(v, 358, y, 36, c, 'right');
+  });
+}
+
+function drawSummary() {
+  const m = S.summary;
+  icon('save', C, 70, 22, K.ok);
+  // One line: "Saved:" in white, the session name in grey, centred as a unit.
+  setFont(30, 600);
+  const head = 'Saved: ', hw = ctx.measureText(head).width;
+  const name = fit(m.name, 30, 500, 300 - hw);
+  setFont(30, 500);
+  const nw = ctx.measureText(name).width, hx = C - (hw + nw) / 2;
+  txt(head, hx, 120, 30, K.fg, 600, 'left');
+  txt(name, hx + hw, 120, 30, K.dim, 500, 'left');
+  const rows = [
+    ['Time', fmt(m.total), K.fg],
+    [m.mode === 'program' ? 'Rounds' : 'Heat laps', String(m.rounds), K.fg],
+    ['Heat', fmt(m.heat), K.heat],
+    ['Cold', fmt(m.cold), K.cold],
+    ['Avg/max HR', m.avg ? `${m.avg}/${m.max}` : '--', K.fg],
+  ];
+  if (m.warnN) rows[1] = ['Warnings', `${m.warnN}× ${fmt(m.warnT)}`, K.bad];
+  const L = 98, R = 356;
+  rows.forEach(([k, v, c], i) => {
+    const y = 170 + i * 40;
+    setFont(30, 700, MONO);
+    const vw = ctx.measureText(v).width;
+    // The label gets whatever space the value leaves, so the two can never overlap.
+    txt(fit(k, 24, 500, R - vw - 14 - L), L, y, 24, K.dim, 500, 'left');
+    num(v, R, y, 30, c, 'right');
+  });
+  zoneStrips(m, 374, L, R);
+  bezelArc(START_ANGLE, 16, K.ok);
+}
+
+function drawOverlays(now) {
+  const b = S.banner;
+  if (b && now - b.t < 2200 && S.screen === 'run') {
+    const col = KIND_COLOR[b.st.kind];
+    rrect(72, 158, 310, 138, 24);
+    ctx.fillStyle = 'rgba(8,10,12,0.94)'; ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.stroke();
+    icon(b.st.kind, 122, 210, 24, col);
+    txt(fit(b.st.label.toUpperCase(), 36, 700, 200), 158, 210, 36, K.fg, 700, 'left', 1);
+    const sub = b.st.dur ? `${fmtShort(b.st.dur)}${b.st.detail ? ' · ' + b.st.detail : ''}` : 'Phase started';
+    txt(fit(sub, 22, 500, 270), C, 260, 22, K.dim, 500);
+  }
+  const t = S.toast;
+  if (t && now - t.t < 1800) {
+    setFont(24, 600);
+    const w = Math.min(340, ctx.measureText(t.text).width + 40);
+    rrect(C - w / 2, 376, w, 44, 22);
+    ctx.fillStyle = '#2a3036'; ctx.fill();
+    txt(fit(t.text, 24, 600, w - 30), C, 399, 24, K.fg, 600);
+  }
+}
+
+function draw(now) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, W);
+  switch (S.screen) {
+    case 'face': drawFace(); break;
+    case 'acts': drawList('ACTIVITIES', ACTS, S.sel.acts); bezelArc(START_ANGLE, 16, K.heat); break;
+    case 'sauna': drawList('SAUNA', LISTS.sauna.items(), S.sel.sauna, K.heat); bezelArc(START_ANGLE, 16, K.heat); break;
+    case 'progs': drawList('PROGRAMS', LISTS.progs.items(), S.sel.progs, K.heat); bezelArc(START_ANGLE, 16, K.heat); break;
+    case 'prog': drawProgDetail(); break;
+    case 'pre': drawPre(); break;
+    case 'run': drawRun(now); break;
+    case 'pause': {
+      const s = S.session;
+      drawList(s.complete ? 'COMPLETE' : `PAUSED · ${fmt(s.total)}`, LISTS.pause.items(), S.sel.pause, s.complete ? K.ok : K.dim);
+      bezelArc(START_ANGLE, 16, K.heat);
+      break;
+    }
+    case 'confirm': drawList('DISCARD SESSION?', LISTS.confirm.items(), S.sel.confirm, K.bad); bezelArc(START_ANGLE, 16, K.heat); break;
+    case 'summary': drawSummary(); break;
+  }
+  drawOverlays(now);
+}
+
+// ---------- side panel ----------
+function renderPrograms() {
+  const ul = document.getElementById('progs');
+  ul.innerHTML = '';
+  for (const p of programs) {
+    const li = document.createElement('li');
+    const head = document.createElement('div'); head.className = 'ph';
+    const n = document.createElement('span'); n.className = 'pn'; n.textContent = p.name;
+    const m = document.createElement('span'); m.className = 'pm'; m.textContent = `${p.rounds} rounds · ${fmtMin(p.total)}`;
+    head.append(n, m);
+    const bar = document.createElement('div'); bar.className = 'pbar';
+    bar.setAttribute('aria-hidden', 'true');
+    for (const s of p.steps) { const i = document.createElement('i'); i.className = 'k-' + s.kind; i.style.flexGrow = s.dur; bar.append(i); }
+    const d = document.createElement('div'); d.className = 'pd';
+    const byRound = [];
+    for (const s of p.steps) (byRound[s.round - 1] = byRound[s.round - 1] || []).push(`${s.label} ${fmtShort(s.dur)}${s.kind === 'heat' ? ' at ' + s.detail.split(' · ')[0] : ''}`);
+    const same = byRound.every(r => r.join() === byRound[0].join());
+    d.textContent = same
+      ? `${p.rounds} × ${byRound[0].join(', ')}`
+      : byRound.map((r, i) => `Round ${i + 1}: ${r.join(', ')}`).join('. ');
+    if (!same) d.textContent += '.';
+    li.append(head, bar, d);
+    ul.append(li);
+  }
+}
+document.getElementById('regen').addEventListener('click', () => {
+  cfg.seed = (Math.random() * 1e9) | 0; saveCfg();
+  programs = genPrograms(cfg.seed);
+  renderPrograms();
+  S.sel.progs = 0;
+  if (S.screen === 'prog' || S.screen === 'progs') go('progs');
+  log('sync', '', `${programs.length} programs from the companion app`);
+});
+function renderZones() {
+  const c = cutoffs(), t = document.getElementById('zones');
+  t.innerHTML = '';
+  for (let z = 5; z >= 1; z--) {
+    const lo = c[z - 1], hi = z < 5 ? c[z] - 1 : cfg.maxHr;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="sw"><i></i></td><td></td><td></td><td></td>';
+    tr.children[0].firstChild.style.background = ZONE_RING[z];
+    tr.children[1].textContent = `Zone ${z}`;
+    tr.children[2].textContent = `${lo}–${hi} bpm`;
+    tr.children[3].textContent = `${ZONE_PCT[z - 1] * 100}–${z < 5 ? ZONE_PCT[z] * 100 : 100}%`;
+    t.append(tr);
+  }
+}
+const maxIn = document.getElementById('max-hr');
+maxIn.value = cfg.maxHr;
+maxIn.addEventListener('change', () => {
+  const v = Math.round(+maxIn.value);
+  cfg.maxHr = Number.isFinite(v) ? Math.min(220, Math.max(120, v)) : 175;
+  maxIn.value = cfg.maxHr;
+  saveCfg(); renderZones(); renderWarn();
+  log('profile', '', `max HR ${cfg.maxHr}, zones updated`);
+});
+const warnIn = document.getElementById('warn-bpm');
+warnIn.value = cfg.warnBpm;
+warnIn.addEventListener('change', () => {
+  const v = Math.round(+warnIn.value);
+  cfg.warnBpm = Number.isFinite(v) ? Math.min(220, Math.max(100, v)) : 165;
+  warnIn.value = cfg.warnBpm;
+  saveCfg(); renderWarn();
+});
+function renderWarn() {
+  const thr = warnLevel();
+  warnIn.disabled = cfg.warnAt !== 'custom';
+  warnIn.closest('label').style.opacity = warnIn.disabled ? 0.45 : 1;
+  document.getElementById('warn-hint').textContent = thr
+    ? `Starts at ${thr} bpm, stops below ${thr - HR_HYST}. While on, the watch vibrates every few seconds and the screen flashes red.`
+    : 'No heart rate warning.';
+}
+for (const name of ['speed', 'wear', 'response', 'warnAt', 'zoneBar']) {
+  for (const inp of document.querySelectorAll(`input[name="${name}"]`)) {
+    inp.checked = cfg[name] === inp.value;
+    inp.addEventListener('change', () => {
+      if (inp.checked) { cfg[name] = inp.value; saveCfg(); renderLegend(); renderWarn(); }
+      if (lastPointer) inp.blur();
+    });
+  }
+}
+
+const tel = {
+  screen: document.getElementById('t-screen'), mode: document.getElementById('t-mode'), phase: document.getElementById('t-phase'),
+  step: document.getElementById('t-step'), total: document.getElementById('t-total'), hr: document.getElementById('t-hr'),
+};
+function updateTelemetry() {
+  const s = S.session;
+  tel.screen.textContent = SCREEN_NAME[S.screen];
+  tel.mode.textContent = s ? (s.mode === 'program' ? 'Program' : 'Tracker') : '–';
+  if (s) {
+    const st = curStep(s);
+    tel.phase.textContent = s.mode === 'program' ? `${st.label}, step ${s.idx + 1}/${s.steps.length}` : `${st.label}, lap ${s.lap}`;
+    tel.step.textContent = s.mode === 'program' ? `${fmt(s.stepT)} of ${fmt(st.dur)}` : fmt(s.stepT);
+    tel.total.textContent = fmt(s.total) + (S.screen === 'run' ? ` (${cfg.speed}×)` : ' paused');
+  } else {
+    tel.phase.textContent = tel.step.textContent = tel.total.textContent = '–';
+  }
+  tel.hr.textContent = hrVisible(s)
+    ? `${hrShown} shown, ${Math.round(hrRaw)} raw · ${hrZone ? 'zone ' + hrZone : 'below zone 1'}`
+    : `-- (strap, ${hrShown} bpm)`;
+}
+
+// ---------- loop ----------
+let last = performance.now(), lastTel = 0;
+function frame(now) {
+  const dt = Math.min(0.25, (now - last) / 1000);
+  last = now;
+  const s = S.session;
+  if (s && S.screen === 'run') {
+    let rem = dt * +cfg.speed;
+    while (rem > 0 && S.screen === 'run') {
+      const h = Math.min(rem, 1);
+      rem -= h;
+      tickSession(s, h);
+      if (s.mode === 'program' && s.stepT >= s.steps[s.idx].dur) advance(s, false);
+    }
+  } else {
+    tickHR(dt, null);
+    sensorTick(dt);
+  }
+  if (s && s.warn && S.screen === 'run' && now - s.lastBuzz > 2500) { vibrate(); s.lastBuzz = now; }
+  draw(now);
+  if (now - lastTel > 200) { updateTelemetry(); updateFF(); lastTel = now; }
+  requestAnimationFrame(frame);
+}
+
+renderPrograms();
+renderZones();
+renderWarn();
+renderLegend();
+log('app', '', 'watch face shown, press START');
+const boot = () => { placeLabels(); requestAnimationFrame(frame); };
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(boot, boot); else boot();
+})();
+</script>

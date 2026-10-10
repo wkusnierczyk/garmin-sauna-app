@@ -5,8 +5,8 @@ Version: 0.1
 Date: 2026-10-10  
 Owner: Wacek  
 Repository: https://github.com/wkusnierczyk/garmin-sauna-app  
-Watch simulator: https://claude.ai/artifact/Qb7C17vU1umjzQ9bRGrT41  
-Companion simulator: https://claude.ai/artifact/SpRYheRUkiU91DbDsfbcgy
+Watch simulator: [simulations/watch.html](simulations/watch.html), published at https://claude.ai/artifact/Qb7C17vU1umjzQ9bRGrT41  
+Companion simulator: [simulations/companion.html](simulations/companion.html), published at https://claude.ai/artifact/SpRYheRUkiU91DbDsfbcgy
 
 The product name is open. "Sauna" is used as a working title throughout. See [Risks and open questions](#20-risks-and-open-questions).
 
@@ -43,7 +43,7 @@ The watch app works on its own. It tracks sessions as they happen (Tracker mode)
 
 The companion adds what a watch cannot do well: browsing history, detailed charts, building and sharing programs, and AI-generated insights and program suggestions.
 
-The watch behaviour in this document was developed in the watch simulator (link above). **This document is authoritative.** When it is silent, match the simulator.
+The watch behaviour in this document was developed in the watch simulator, and the companion layout in the companion simulator. Both are single HTML files in `design/simulations/`; open them in a browser, no build step. **This document is authoritative.** When it is silent, match the simulators.
 
 ## 2. Goals and non-goals
 
